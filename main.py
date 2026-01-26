@@ -72,10 +72,10 @@ if proxy != False:
         logging.error(f"Proxy parsing failed: {e}")
         sys.exit(1)
 
-# Increased timeouts for reliability
-PAGE_LOAD_TIMEOUT = 300000  # 5 minutes
-SELECTOR_TIMEOUT = 60000    # 1 minute
-STRIPE_TIMEOUT = 300000     # 5 minutes
+# timeouts
+PAGE_LOAD_TIMEOUT = 10000  # 10 seconds
+SELECTOR_TIMEOUT = 15000    # 15 seconds
+STRIPE_TIMEOUT = 60000     # 1 minute
 
 # Start of main loop - runs forever, restarting on any error
 attempt = 0
@@ -174,10 +174,14 @@ while True:
                                     btn.click()
                                     ticketsReleased = True
 
-                                # If there is a promo code, we click off the ticket
+                                # If there is a promo code, we click off the ticket THIS DID NOT WORK DURING LAST LIVE RUN
                                 promo_input = page.locator('input[autocomplete="off"][spellcheck="false"]').first
                                 if promo_input.count() > 0 and promo_input.is_visible():
-                                    btn.locator('button:not([data-disabled="true"])').first.click()
+                                    logging.info("promo code detected")
+                                    t.locator('button:not([data-disabled="true"])').first.click()
+                                    logging.info("Attempted to click (-)")
+                                    ticketsFound -= 1
+                                    ticketsReleased = False
                             except Exception as e:
                                 logging.warning(f"Ticket processing error: {e}")
                                 break
