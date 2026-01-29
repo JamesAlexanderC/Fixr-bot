@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.11-slim
+FROM python:3.11
 
 # Prevent interactive prompts and ensure pip-installed scripts are in PATH
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,6 +27,9 @@ WORKDIR /app
 # Copy and install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Camoufox CLI
+RUN pip install --no-cache-dir Camoufox
 
 # Copy application code
 COPY . /app/

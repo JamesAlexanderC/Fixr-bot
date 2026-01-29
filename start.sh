@@ -29,8 +29,8 @@ x11vnc -display $DISPLAY -forever -nopw -shared &
 echo "[+] VNC server started"
 
 # Now run Camoufox fetch — Xvfb is guaranteed ready
-echo "[+] Running Camoufox fetch"
-python3 -m camoufox fetch
+# echo "[+] Running Camoufox fetch"
+# Camoufox fetch
 
 # Run Python script with positional arguments
 echo "[+] Running Python script"
