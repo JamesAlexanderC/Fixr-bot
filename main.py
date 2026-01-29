@@ -34,19 +34,24 @@ import argparse
 import logging
 from datetime import datetime
 from functools import wraps
+import os
+
+# Create log directory for screenshots and logs
+LOG_DIR = "log"
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # Setup logging with fallback for permission errors
 handlers = [logging.StreamHandler(sys.stdout)]
 try:
-    # Try to create log file in current directory
-    file_handler = logging.FileHandler('fixr_bot.log')
+    # Try to create log file in log directory
+    file_handler = logging.FileHandler(os.path.join(LOG_DIR, 'fixr_bot.log'))
     handlers.append(file_handler)
 except PermissionError:
     # If permission denied, try /tmp directory
     try:
         file_handler = logging.FileHandler('/tmp/fixr_bot.log')
         handlers.append(file_handler)
-        print("Warning: Cannot write to current directory, logging to /tmp/fixr_bot.log")
+        print("Warning: Cannot write to log directory, logging to /tmp/fixr_bot.log")
     except Exception as e:
         print(f"Warning: Cannot create log file, logging to console only: {e}")
 
@@ -56,6 +61,19 @@ logging.basicConfig(
     handlers=handlers
 )
 logger = logging.getLogger(__name__)
+
+# Helper function for timestamped screenshots
+def save_screenshot(page, name, description=""):
+    """Save a screenshot with timestamp in the log directory"""
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = os.path.join(LOG_DIR, f"{timestamp}_{name}.png")
+    try:
+        page.screenshot(path=filename)
+        logger.info(f"Screenshot saved: {filename} {description}")
+        return filename
+    except Exception as e:
+        logger.error(f"Failed to save screenshot {filename}: {str(e)}")
+        return None
 
 # Retry decorator with exponential backoff
 def retry_with_timeout(max_retries=3, timeout=10, backoff_factor=2):
@@ -145,12 +163,14 @@ while True:
         def connect_to_fixr():
             try:
                 logger.info("Attempting to connect to Fixr login page...")
-                page.goto("https://fixr.co/login", timeout=10000)
-                page.wait_for_load_state("domcontentloaded", timeout=10000)
+                page.goto("https://fixr.co/login", timeout=20000)
+                page.wait_for_load_state("domcontentloaded", timeout=20000)
+                save_screenshot(page, "01_connected_to_fixr", "- Successfully loaded Fixr login page")
                 logger.info("Successfully connected to Fixr")
                 return True
             except Exception as e:
                 logger.error(f"Failed to connect to Fixr: {str(e)}")
+                save_screenshot(page, "error_connection_failed", f"- Connection error: {str(e)}")
                 raise Exception(f"Could not connect to Fixr - {str(e)}")
         
         try:
@@ -163,25 +183,28 @@ while True:
         def perform_login():
             try:
                 logger.info("Starting login process...")
-                page.wait_for_selector('input[type="email"]', timeout=10000)
+                page.wait_for_selector('input[type="email"]', timeout=20000)
                 page.fill('input[type="email"]', email)
                 logger.debug("Email entered")
 
                 page.click('button:has-text("Continue")')
+                page.wait_for_load_state("networkidle", timeout=30000)
                 logger.debug("Clicked continue button")
 
-                page.wait_for_selector('input[type="password"]', timeout=10000)
+                page.wait_for_selector('input[type="password"]', timeout=20000)
                 page.fill('input[type="password"]', password)
                 logger.debug("Password entered")
 
                 page.click('button:has-text("Sign in")')
+                page.wait_for_load_state("networkidle", timeout=35000)
                 logger.debug("Clicked sign in button")
 
-                page.wait_for_load_state("networkidle", timeout=15000)
+                save_screenshot(page, "04_logged_in", "- Successfully logged in")
                 logger.info("Successfully logged into Fixr")
                 return True
             except Exception as e:
                 logger.error(f"Login attempt failed: {str(e)}")
+                save_screenshot(page, "error_login_failed", f"- Login error: {str(e)}")
                 raise
         
         try:
@@ -212,14 +235,20 @@ while True:
                 try:
                     CT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     logger.info(f"Refreshing organiser page at {CT}")
-                    page.goto(f"{organiserURL}", timeout=10000)
-                    page.wait_for_load_state("domcontentloaded", timeout=10000)
+                    page.goto(f"{organiserURL}", timeout=20000)
+                    page.wait_for_load_state("domcontentloaded", timeout=20000)
                     
                     element = page.locator(f'a:has-text("{eventPartialID}")')
                     if element.count() > 0:
                         logger.info(f"Event found: {eventPartialID}")
-                        element.click(timeout=10000)
-                        page.locator('span:has-text("Tickets")').click(timeout=10000)
+                        save_screenshot(page, "05_event_found", f"- Event '{eventPartialID}' located")
+                        element.click(timeout=20000)
+                        page.wait_for_load_state("networkidle", timeout=30000)
+                        logger.debug("Event page loaded")
+                        
+                        page.locator('span:has-text("Tickets")').click(timeout=20000)
+                        page.wait_for_load_state("networkidle", timeout=30000)
+                        save_screenshot(page, "06_tickets_page", "- Navigated to tickets page")
                         logger.info("Navigated to tickets page")
                         return True
                     else:
@@ -229,6 +258,7 @@ while True:
                     
                 except Exception as e:
                     logger.warning(f"Error during page refresh: {str(e)}")
+                    save_screenshot(page, "error_page_refresh", f"- Refresh error: {str(e)}")
                     # Don't raise here, just continue the loop
                     time.sleep(2)
                     last_refresh = time.time()
@@ -252,14 +282,16 @@ while True:
                         
                         try:
                             # find ticket elements with timeout
-                            page.wait_for_selector('div[data-testid^="ticket-list-item-"]', timeout=20000)
+                            page.wait_for_selector('div[data-testid^="ticket-list-item-"]', timeout=30000)
                             tickets = page.locator('div[data-testid^="ticket-list-item-"]')
                             
                             count = tickets.count()
                             logger.info(f"Found {count} ticket types on page")
+                            save_screenshot(page, "07_ticket_list", f"- Found {count} ticket types")
                             
                             if count == 0:
                                 logger.warning("No tickets found on page")
+                                save_screenshot(page, "error_no_tickets", "- No tickets available")
                                 break
 
                             ticketsFound = 0
@@ -268,7 +300,7 @@ while True:
                             for i in range(count):
                                 try:
                                     t = tickets.nth(i)
-                                    text = t.inner_text(timeout=10000).lower()
+                                    text = t.inner_text(timeout=15000).lower()
                                     
                                     if 'sold out' in text:
                                         logger.debug(f"Ticket {i+1} is sold out, skipping")
@@ -279,18 +311,23 @@ while True:
                                     
                                     btn = t.locator('button:not([data-disabled="true"])').first
                                     if btn.count() > 0:
-                                        btn.click(timeout=10000)
+                                        btn.click(timeout=20000)
+                                        page.wait_for_load_state("networkidle", timeout=25000)
                                         ticketsReleased = True
+                                        save_screenshot(page, f"08_ticket_{i+1}_added", f"- Added ticket {i+1} to basket")
                                         logger.info(f"Added ticket {i+1} to basket")
                                     
                                     # Handle promo code popup
                                     promo_input = page.locator('input[autocomplete="off"][spellcheck="false"]').first
                                     if promo_input.count() > 0 and promo_input.is_visible():
                                         logger.debug("Promo code required, skipping this ticket")
-                                        t.locator('button:not([data-disabled="true"])').first.click(timeout=10000)
+                                        save_screenshot(page, f"info_promo_required_{i+1}", "- Promo code required")
+                                        t.locator('button:not([data-disabled="true"])').first.click(timeout=20000)
+                                        page.wait_for_load_state("networkidle", timeout=25000)
                                         
                                 except Exception as e:
                                     logger.warning(f"Error processing ticket {i+1}: {str(e)}")
+                                    save_screenshot(page, f"error_ticket_{i+1}_processing", f"- Error with ticket {i+1}: {str(e)}")
                                     continue
 
                             logger.info(f"Tickets found: {ticketsFound}, Tickets added: {ticketsReleased}")
@@ -300,6 +337,7 @@ while True:
                                 
                         except Exception as e:
                             logger.warning(f"Error during ticket selection: {str(e)}")
+                            save_screenshot(page, "error_ticket_selection", f"- Ticket selection error: {str(e)}")
                             time.sleep(2)
                             continue
                     
@@ -307,21 +345,18 @@ while True:
                     try:
                         logger.info("Attempting to reserve tickets...")
                         # Take screenshot before clicking reserve
-                        page.screenshot(path="before_reserve.png")
-                        logger.info("Screenshot saved: before_reserve.png")
+                        save_screenshot(page, "09_before_reserve", "- Before clicking Reserve button")
                         
-                        page.locator('button:has-text("Reserve")').click(timeout=15000)
-                        page.wait_for_load_state("networkidle", timeout=25000)
+                        page.locator('button:has-text("Reserve")').click(timeout=25000)
+                        page.wait_for_load_state("networkidle", timeout=35000)
                         logger.info("Tickets successfully reserved!")
                         
                         # Take screenshot after reservation
-                        page.screenshot(path="after_reserve.png")
-                        logger.info("Screenshot saved: after_reserve.png")
+                        save_screenshot(page, "10_after_reserve", "- Tickets reserved successfully")
                         return True
                     except Exception as e:
                         logger.error(f"Failed to reserve tickets: {str(e)}")
-                        page.screenshot(path="reserve_error.png")
-                        logger.info("Error screenshot saved: reserve_error.png")
+                        save_screenshot(page, "error_reserve_failed", f"- Reserve error: {str(e)}")
                         raise
                 
                 select_and_reserve_tickets()
@@ -341,67 +376,164 @@ while True:
         def complete_checkout():
             try:
                 logger.info("Starting checkout process...")
+                save_screenshot(page, "11_checkout_start", "- Starting checkout")
                 
-                # Disable ticket protection
+                # Scroll to top to ensure all elements are visible
+                page.evaluate("window.scrollTo(0, 0)")
+                time.sleep(1)
+                
+                # Disable ticket protection with retry
                 logger.debug("Disabling ticket protection")
-                page.locator('input[name="ticket-protection"][value="no"]').check(timeout=15000)
+                try:
+                    protection_input = page.locator('input[name="ticket-protection"][value="no"]')
+                    protection_input.scroll_into_view_if_needed(timeout=15000)
+                    protection_input.check(timeout=30000)
+                except Exception as e:
+                    logger.warning(f"Could not find ticket protection option: {str(e)}")
+                    save_screenshot(page, "info_no_protection_option", "- No ticket protection option found")
         
-                # Uncheck all additional options
+                # Scroll down to find radio buttons
+                page.evaluate("window.scrollBy(0, 300)")
+                time.sleep(1)
+                
+                # Uncheck all additional options with better error handling
                 radios = page.locator('input[type="radio"][id$="-radio-no"]')
                 radio_count = radios.count()
                 logger.debug(f"Found {radio_count} additional options to disable")
                 for i in range(radio_count):
-                    radios.nth(i).check(timeout=10000)
+                    try:
+                        radio = radios.nth(i)
+                        radio.scroll_into_view_if_needed(timeout=15000)
+                        radio.check(timeout=25000)
+                        time.sleep(0.3)  # Small delay between radio selections
+                    except Exception as e:
+                        logger.warning(f"Could not check radio {i+1}: {str(e)}")
 
-                logger.debug("Clicking continue to payment")
-                page.locator('button:has-text("Continue")').click(timeout=15000)
+                save_screenshot(page, "12_options_disabled", "- Options configured")
                 
-                # Wait for Stripe iframe
+                # Scroll to continue button
+                continue_btn = page.locator('button:has-text("Continue")')
+                continue_btn.scroll_into_view_if_needed(timeout=15000)
+                save_screenshot(page, "12b_before_continue", "- Before clicking continue")
+                
+                logger.debug("Clicking continue to payment")
+                continue_btn.click(timeout=30000)
+                
+                # Wait for page to load
+                page.wait_for_load_state("networkidle", timeout=40000)
+                time.sleep(2)
+                save_screenshot(page, "12c_after_continue", "- After clicking continue")
+                
+                # Wait for Stripe iframe with scrolling
                 logger.info("Waiting for Stripe payment form...")
+                page.evaluate("window.scrollTo(0, 0)")
+                time.sleep(2)
+                
+                # Wait for iframe to appear
                 stripe_iframe_element = page.wait_for_selector(
                     "iframe[src*='stripe']",
-                    timeout=25000
+                    timeout=40000
                 )
+                logger.debug("Stripe iframe element found")
+                time.sleep(2)  # Give iframe time to initialize
 
                 stripe_frame = stripe_iframe_element.content_frame()
                 if stripe_frame is None:
+                    save_screenshot(page, "error_stripe_iframe_missing", "- Stripe iframe not found")
                     raise Exception("Stripe iframe not resolved")
                 
+                # Wait for the iframe to fully load its content
+                logger.debug("Waiting for iframe content to load...")
+                try:
+                    # Try to wait for any element to appear in the iframe as a sign it's loaded
+                    stripe_frame.wait_for_selector("body", timeout=10000)
+                    time.sleep(2)
+                except Exception as e:
+                    logger.warning(f"Could not confirm iframe body loaded: {str(e)}")
+                
+                save_screenshot(page, "13_stripe_loaded", "- Stripe payment form loaded")
                 logger.debug("Stripe iframe loaded successfully")
 
-                # Wait for all payment fields
+                # Wait for all payment fields with increased timeouts and better error handling
                 logger.debug("Waiting for payment fields...")
-                stripe_frame.wait_for_selector("#Field-numberInput", timeout=20000)
-                stripe_frame.wait_for_selector("#Field-expiryInput", timeout=20000)
-                stripe_frame.wait_for_selector("#Field-cvcInput", timeout=20000)
-                stripe_frame.wait_for_selector("#Field-postalCodeInput", timeout=20000)
+                
+                # Try to find the fields with more specific waiting
+                try:
+                    logger.debug("Looking for card number input...")
+                    stripe_frame.wait_for_selector("#Field-numberInput", timeout=40000, state="visible")
+                    logger.debug("Card number input found")
+                    
+                    logger.debug("Looking for expiry input...")
+                    stripe_frame.wait_for_selector("#Field-expiryInput", timeout=40000, state="visible")
+                    logger.debug("Expiry input found")
+                    
+                    logger.debug("Looking for CVC input...")
+                    stripe_frame.wait_for_selector("#Field-cvcInput", timeout=40000, state="visible")
+                    logger.debug("CVC input found")
+                    
+                    logger.debug("Looking for postcode input...")
+                    stripe_frame.wait_for_selector("#Field-postalCodeInput", timeout=40000, state="visible")
+                    logger.debug("Postcode input found")
+                except Exception as e:
+                    logger.error(f"Failed to find payment fields: {str(e)}")
+                    # Get iframe HTML for debugging
+                    try:
+                        iframe_html = stripe_frame.content()
+                        logger.debug(f"Iframe HTML length: {len(iframe_html)} characters")
+                        # Save iframe source for debugging
+                        with open("log/stripe_iframe_debug.html", "w") as f:
+                            f.write(iframe_html)
+                        logger.info("Saved iframe HTML to log/stripe_iframe_debug.html")
+                    except Exception as debug_e:
+                        logger.error(f"Could not get iframe HTML: {str(debug_e)}")
+                    raise
+                
+                logger.info("All payment fields found")
+                time.sleep(1)
 
-                # Fill payment details
+                # Fill payment details with increased timeouts
                 logger.info("Filling payment details...")
-                stripe_frame.fill("#Field-numberInput", CARDNO, timeout=15000)
-                stripe_frame.fill("#Field-expiryInput", EXPIRY, timeout=15000)
-                stripe_frame.fill("#Field-cvcInput", CVC, timeout=15000)
-                stripe_frame.fill("#Field-postalCodeInput", POSTCODE, timeout=15000)
+                stripe_frame.fill("#Field-numberInput", CARDNO, timeout=30000)
+                logger.debug("Card number filled")
+                time.sleep(0.5)
+                
+                stripe_frame.fill("#Field-expiryInput", EXPIRY, timeout=30000)
+                logger.debug("Expiry filled")
+                time.sleep(0.5)
+                
+                stripe_frame.fill("#Field-cvcInput", CVC, timeout=30000)
+                logger.debug("CVC filled")
+                time.sleep(0.5)
+                
+                stripe_frame.fill("#Field-postalCodeInput", POSTCODE, timeout=30000)
+                logger.debug("Postcode filled")
+                time.sleep(1)
+                
+                save_screenshot(page, "14_payment_filled", "- Payment details entered")
                 logger.debug("Payment details filled")
+                
+                # Scroll to pay button
+                pay_button = page.locator('button:has-text("Pay now")')
+                pay_button.scroll_into_view_if_needed(timeout=15000)
+                save_screenshot(page, "14b_before_pay", "- Before clicking Pay now")
                 
                 # Submit payment
                 logger.info("Submitting payment...")
-                pay_button = page.locator('button:has-text("Pay now")')
-                pay_button.click(timeout=15000)
-
+                pay_button.click(timeout=30000)
+                
                 # Wait for payment processing
                 logger.info("Waiting for payment to process...")
+                page.wait_for_load_state("networkidle", timeout=40000)
                 time.sleep(10)
 
                 # Take screenshot for confirmation
-                page.screenshot(path="page.png")
-                logger.info("Payment submitted! Screenshot saved as page.png")
+                save_screenshot(page, "15_payment_submitted", "- Payment submitted")
+                logger.info("Payment submitted!")
                 return True
                 
             except Exception as e:
                 logger.error(f"Checkout failed: {str(e)}")
-                page.screenshot(path="error.png")
-                logger.info("Error screenshot saved as error.png")
+                save_screenshot(page, "error_checkout_failed", f"- Checkout error: {str(e)}")
                 raise
         
         try:

@@ -1,0 +1,107 @@
+2026-01-29 13:13:01,630 - INFO - Attempting connect_to_fixr (attempt 1/5)
+2026-01-29 13:13:01,631 - INFO - Attempting to connect to Fixr login page...
+2026-01-29 13:13:03,824 - INFO - Screenshot saved: log/20260129_131303_01_connected_to_fixr.png - Successfully loaded Fixr login page
+2026-01-29 13:13:03,825 - INFO - Successfully connected to Fixr
+2026-01-29 13:13:03,825 - INFO - connect_to_fixr completed successfully
+2026-01-29 13:13:03,826 - INFO - Attempting perform_login (attempt 1/5)
+2026-01-29 13:13:03,828 - INFO - Starting login process...
+2026-01-29 13:13:10,972 - INFO - Screenshot saved: log/20260129_131310_04_logged_in.png - Successfully logged in
+2026-01-29 13:13:10,972 - INFO - Successfully logged into Fixr
+2026-01-29 13:13:10,972 - INFO - perform_login completed successfully
+2026-01-29 13:13:10,973 - INFO - Refreshing organiser page at 2026-01-29 13:13:10
+2026-01-29 13:13:11,675 - INFO - Event found: Country Take Over at The Timepiece Ranch
+2026-01-29 13:13:12,067 - INFO - Screenshot saved: log/20260129_131311_05_event_found.png - Event 'Country Take Over at The Timepiece Ranch' located
+2026-01-29 13:13:15,298 - INFO - Screenshot saved: log/20260129_131315_06_tickets_page.png - Navigated to tickets page
+2026-01-29 13:13:15,299 - INFO - Navigated to tickets page
+2026-01-29 13:13:15,402 - INFO - Found 3 ticket types on page
+2026-01-29 13:13:15,575 - INFO - Screenshot saved: log/20260129_131315_07_ticket_list.png - Found 3 ticket types
+2026-01-29 13:13:15,586 - INFO - Available ticket found: 1
+2026-01-29 13:13:15,905 - INFO - Screenshot saved: log/20260129_131315_08_ticket_1_added.png - Added ticket 1 to basket
+2026-01-29 13:13:15,905 - INFO - Added ticket 1 to basket
+2026-01-29 13:13:15,923 - INFO - Available ticket found: 2
+2026-01-29 13:13:16,160 - INFO - Screenshot saved: log/20260129_131316_08_ticket_2_added.png - Added ticket 2 to basket
+2026-01-29 13:13:16,160 - INFO - Added ticket 2 to basket
+2026-01-29 13:13:16,177 - INFO - Tickets found: 2, Tickets added: True
+2026-01-29 13:13:16,177 - INFO - Attempting to reserve tickets...
+2026-01-29 13:13:16,288 - INFO - Screenshot saved: log/20260129_131316_09_before_reserve.png - Before clicking Reserve button
+2026-01-29 13:13:16,455 - INFO - Tickets successfully reserved!
+2026-01-29 13:13:16,665 - INFO - Screenshot saved: log/20260129_131316_10_after_reserve.png - Tickets reserved successfully
+2026-01-29 13:13:16,665 - INFO - Attempting complete_checkout (attempt 1/3)
+2026-01-29 13:13:16,665 - INFO - Starting checkout process...
+2026-01-29 13:13:16,813 - INFO - Screenshot saved: log/20260129_131316_11_checkout_start.png - Starting checkout
+2026-01-29 13:13:19,591 - INFO - Screenshot saved: log/20260129_131319_12_options_disabled.png - Options configured
+2026-01-29 13:13:19,769 - INFO - Screenshot saved: log/20260129_131319_12b_before_continue.png - Before clicking continue
+2026-01-29 13:13:22,876 - INFO - Screenshot saved: log/20260129_131321_12c_after_continue.png - After clicking continue
+2026-01-29 13:13:22,876 - INFO - Waiting for Stripe payment form...
+2026-01-29 13:13:37,928 - WARNING - Could not confirm iframe body loaded: Frame.wait_for_selector: Timeout 10000ms exceeded.
+Call log:
+  - waiting for locator("body") to be visible
+    24 × locator resolved to hidden <body>…</body>
+
+2026-01-29 13:13:38,115 - INFO - Screenshot saved: log/20260129_131337_13_stripe_loaded.png - Stripe payment form loaded
+2026-01-29 13:14:18,118 - ERROR - Failed to find payment fields: Frame.wait_for_selector: Timeout 40000ms exceeded.
+Call log:
+  - waiting for locator("#Field-numberInput") to be visible
+
+2026-01-29 13:14:18,127 - INFO - Saved iframe HTML to log/stripe_iframe_debug.html
+2026-01-29 13:14:18,127 - ERROR - Checkout failed: Frame.wait_for_selector: Timeout 40000ms exceeded.
+Call log:
+  - waiting for locator("#Field-numberInput") to be visible
+
+2026-01-29 13:14:18,298 - INFO - Screenshot saved: log/20260129_131418_error_checkout_failed.png - Checkout error: Frame.wait_for_selector: Timeout 40000ms exceeded.
+Call log:
+  - waiting for locator("#Field-numberInput") to be visible
+
+2026-01-29 13:14:18,298 - WARNING - complete_checkout failed (attempt 1/3): Frame.wait_for_selector: Timeout 40000ms exceeded.
+Call log:
+  - waiting for locator("#Field-numberInput") to be visible
+
+2026-01-29 13:14:18,298 - INFO - Retrying in 1 seconds...
+2026-01-29 13:14:19,299 - INFO - Attempting complete_checkout (attempt 2/3)
+2026-01-29 13:14:19,299 - INFO - Starting checkout process...
+2026-01-29 13:14:19,448 - INFO - Screenshot saved: log/20260129_131419_11_checkout_start.png - Starting checkout
+2026-01-29 13:14:35,455 - WARNING - Could not find ticket protection option: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("input[name=\"ticket-protection\"][value=\"no\"]")
+
+2026-01-29 13:14:35,602 - INFO - Screenshot saved: log/20260129_131435_info_no_protection_option.png - No ticket protection option found
+2026-01-29 13:14:36,764 - INFO - Screenshot saved: log/20260129_131436_12_options_disabled.png - Options configured
+2026-01-29 13:14:51,766 - ERROR - Checkout failed: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
+2026-01-29 13:14:51,924 - INFO - Screenshot saved: log/20260129_131451_error_checkout_failed.png - Checkout error: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
+2026-01-29 13:14:51,925 - WARNING - complete_checkout failed (attempt 2/3): Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
+2026-01-29 13:14:51,925 - INFO - Retrying in 2 seconds...
+2026-01-29 13:14:53,925 - INFO - Attempting complete_checkout (attempt 3/3)
+2026-01-29 13:14:53,925 - INFO - Starting checkout process...
+2026-01-29 13:14:54,073 - INFO - Screenshot saved: log/20260129_131453_11_checkout_start.png - Starting checkout
+2026-01-29 13:15:10,080 - WARNING - Could not find ticket protection option: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("input[name=\"ticket-protection\"][value=\"no\"]")
+
+2026-01-29 13:15:10,232 - INFO - Screenshot saved: log/20260129_131510_info_no_protection_option.png - No ticket protection option found
+2026-01-29 13:15:11,390 - INFO - Screenshot saved: log/20260129_131511_12_options_disabled.png - Options configured
+2026-01-29 13:15:26,393 - ERROR - Checkout failed: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
+2026-01-29 13:15:26,541 - INFO - Screenshot saved: log/20260129_131526_error_checkout_failed.png - Checkout error: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
+2026-01-29 13:15:26,541 - WARNING - complete_checkout failed (attempt 3/3): Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
+2026-01-29 13:15:26,541 - ERROR - complete_checkout failed after 3 attempts
+2026-01-29 13:15:26,541 - CRITICAL - Checkout failed after retries: Locator.scroll_into_view_if_needed: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text(\"Continue\")")
+
