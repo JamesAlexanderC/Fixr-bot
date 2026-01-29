@@ -46,7 +46,7 @@ args = parser.parse_args()
 email = args.email
 password = args.password
 eventPartialID = args.eventPartialID
-proxy = args.proxy if args.proxy else False
+proxy = args.proxy if args.proxy else None
 organiserURL = args.organiserURL
 test = args.test
 
@@ -57,7 +57,7 @@ if test:
     POSTCODE = "AA00 0AA"
 
 # Parsing proxy for correct Camoufox format (Assumes a specific proxy format)
-if proxy != False:
+if proxy is not None:
     try:
         split_proxy = proxy.split(":")
 
@@ -74,8 +74,12 @@ if proxy != False:
 # Start of main loop outside of browser instance to allow reconnection and restart in case of initial failure
 while True:
     
-    # opens Camoufox browser instance with specific set of variables for use case including previously specified proxy 
-    with Camoufox(disable_coop=True, window=(1280, 720), proxy=proxy, i_know_what_im_doing=True, geoip=True) as browser:
+    # opens Camoufox browser instance with specific set of variables for use case including previously specified proxy
+    camoufox_kwargs = {"disable_coop": True, "window": (1280, 720), "i_know_what_im_doing": True, "geoip": True, "headless": True}
+    if proxy is not None:
+        camoufox_kwargs["proxy"] = proxy
+    
+    with Camoufox(**camoufox_kwargs) as browser:
         page = browser.new_page()
         
         # Try connect to fixr, error occurs here, network is either unreachable, libraries are no longer valid, or fixr layout has been changed rendering this script useless
