@@ -4,7 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Fixr Bot Control</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <script>
+        const stylesheet = document.createElement('link');
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = location.protocol === 'file:' ? 'style.css' : '/static/style.css';
+        document.head.appendChild(stylesheet);
+    </script>
 </head>
 <body>
     <div class="wrap">
