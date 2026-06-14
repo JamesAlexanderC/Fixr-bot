@@ -1,0 +1,5 @@
+Make each buy buy a specific time, make it resilient (done)
+make paralell buys with different accounts (in progress 14/06/2026)
+Implement proxies
+make an account creation system - including storage
+Implement further automation and self fixing

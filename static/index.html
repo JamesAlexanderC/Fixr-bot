@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fixr Bot Control</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <h1>Fixr Bot Control</h1>
+            <p>Use this page to initialise the bot, start the heartbeat, send a custom message, or shut everything down.</p>
+            <div class="grid">
+                <button class="accent" onClick="callApi('/init', 'POST', 'Initialise sent')">Initialise Bot</button>
+                <button class="accent" onClick="callApi('/start', 'POST', 'Heartbeat start sent')">Start Heartbeat</button>
+                <button class="danger" onClick="callApi('/shutdown', 'POST', 'Shutdown sent')">Shutdown</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Custom message</h2>
+            <div class="row">
+                <input id="msg" placeholder="Message to queue" />
+                <button onClick="sendCustom()">Send</button>
+            </div>
+            <p class="muted">Sends the raw text to <code>/custom</code> as <code>{"msg": "..."}</code>.</p>
+        </div>
+
+        <div class="card">
+            <h2>Response</h2>
+            <div id="status" class="status">Ready.</div>
+        </div>
+    </div>
+
+    <script>
+        async function callApi(url, method, okText, body) {
+            const status = document.getElementById('status');
+            status.textContent = 'Sending...';
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: body ? {'Content-Type': 'application/json'} : {},
+                    body: body ? JSON.stringify(body) : undefined,
+                });
+                const data = await res.json();
+                status.textContent = okText + '\n' + JSON.stringify(data, null, 2);
+            } catch (err) {
+                status.textContent = 'Request failed:\n' + err;
+            }
+        }
+
+        function sendCustom() {
+            const msg = document.getElementById('msg').value;
+            callApi('/custom', 'POST', 'Custom message sent', { msg });
+        }
+    </script>
+</body>
+</html>
