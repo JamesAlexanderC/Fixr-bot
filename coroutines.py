@@ -1,5 +1,6 @@
 import asyncio
 from camoufox.async_api import AsyncCamoufox
+import json
 
 from ticketFunctions import checkForTickets, loginToAccount, reserveTickets, buyTickets
 import output
@@ -101,55 +102,7 @@ async def refreshPage(page):
     new_page = await context.new_page()
 
     return new_page
-
-# --------------------------------------------------------------------
-# Store secrets
-# --------------------------------------------------------------------
-
-async def storeSecrets(
-        cardNumber = None,
-        cardExpiry = None,
-        cardCvc = None,
-        cardCountry = None,
-        cardPostcode = None
-        ):
-    updates = {}
-
-    if cardNumber is not None:
-        updates["CARD_NUMBER"] = str(cardNumber)
-    if cardExpiry is not None:
-        updates["CARD_EXPIRY"] = str(cardExpiry)
-    if cardCvc is not None:
-        updates["CARD_CVC"] = str(cardCvc)
-    if cardCountry is not None:
-        updates["CARD_COUNTRY"] = str(cardCountry)
-    if cardPostcode is not None:
-        updates["CARD_POSTCODE"] = str(cardPostcode)
-
-    if len(updates) == 0:
-        return False
-
-    existing = {}
-
-    try:
-        with open('.env', 'r') as f:
-            for raw_line in f:
-                line = raw_line.strip()
-                if line == "" or line.startswith('#') or '=' not in line:
-                    continue
-                key, value = line.split('=', 1)
-                existing[key] = value
-    except FileNotFoundError:
-        pass
-
-    existing.update(updates)
-
-    with open('.env', 'w') as f:
-        for key, value in existing.items():
-            f.write(f"{key}={value}\n")
-
-    return True
-
+        
 # --------------------------------------------------------------------
 # TESTING
 # --------------------------------------------------------------------
@@ -161,8 +114,6 @@ async def runTests():
         ) as browser:
         page1 = await createPage(browser)
         await ticketSearch(page1, "test")
-
-async
 
 if __name__ == "__main__":
     asyncio.run(runTests())

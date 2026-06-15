@@ -1,3 +1,4 @@
 .env
 secrets.txt
-accounts.txt
+accounts.json
+card.txt
