@@ -107,12 +107,6 @@ async def refreshPage(page):
 # --------------------------------------------------------------------
 
 async def storeSecrets(
-        email = None, 
-        password = None, 
-        fname = None,
-        lname = None,
-        dob = None,
-        phone = None,
         cardNumber = None,
         cardExpiry = None,
         cardCvc = None,
@@ -121,18 +115,6 @@ async def storeSecrets(
         ):
     updates = {}
 
-    if email is not None:
-        updates["EMAIL"] = str(email)
-    if password is not None:
-        updates["PASSWORD"] = str(password)
-    if fname is not None:
-        updates["FIRST_NAME"] = str(fname)
-    if lname is not None:
-        updates["LAST_NAME"] = str(lname)
-    if dob is not None:
-        updates["DOB"] = str(dob)
-    if phone is not None:
-        updates["PHONE"] = str(phone)
     if cardNumber is not None:
         updates["CARD_NUMBER"] = str(cardNumber)
     if cardExpiry is not None:
@@ -177,9 +159,10 @@ async def runTests():
             i_know_what_im_doing=True,
             disable_coop=True
         ) as browser:
-        page = await createPage(browser)
-        await storeSecrets(email = '17clarkeja@gmail.com')
-        await ticketSearch(page, "test")
+        page1 = await createPage(browser)
+        await ticketSearch(page1, "test")
+
+async
 
 if __name__ == "__main__":
     asyncio.run(runTests())
