@@ -4,8 +4,6 @@ from camoufox.async_api import AsyncCamoufox
 from ticketFunctions import checkForTickets, loginToAccount, reserveTickets, buyTickets
 import output
 
-pageLock = asyncio.Lock()
-
 # --------------------------------------------------------------------
 # The 'Get Tickets' flow, made it very robust
 # --------------------------------------------------------------------
@@ -14,10 +12,9 @@ async def getTickets(page, url, queue ):
 
     for i in range(3):
         try:
-            async with pageLock:
-                await loginToAccount.login(page)
-                output.info("login successful")
-                break
+            await loginToAccount.login(page)
+            output.info("login successful")
+            break
         except:
             if i < 2:
                 output.info(f"Login failed on attempt {i+1}, retrying")
@@ -28,10 +25,9 @@ async def getTickets(page, url, queue ):
 
     for i in range(3):
         try:
-            async with pageLock:
-                await reserveTickets.reserve(page, url)
-                output.info("reservation successful")
-                break
+            await reserveTickets.reserve(page, url)
+            output.info("reservation successful")
+            break
         except:
             if i < 2:
                 output.info(f"Reservation failed on attempt {i+1}, retrying")
@@ -42,10 +38,9 @@ async def getTickets(page, url, queue ):
 
     for i in range(20):
         try:
-            async with pageLock:
-                await buyTickets.buy(page)
-                output.info("buy successful")
-                break
+            await buyTickets.buy(page)
+            output.info("buy successful")
+            break
         except:
             if (i%5) != 0:
                 output.info(f"Buy failed on attempt {i+1}, retrying with 5 second wait")
@@ -65,8 +60,7 @@ async def ticketSearch(page, queue):
         await asyncio.sleep(3)
 
         try:
-            async with pageLock:
-                there = await checkForTickets.check(page)
+            there = await checkForTickets.check(page)
 
         except:
             output.info(f"search failed on attempt {i+1}, requesting browser refresh")
@@ -83,32 +77,30 @@ async def ticketSearch(page, queue):
 # --------------------------------------------------------------------
 
 async def createPage(browser):
-    async with pageLock:
-        context = await browser.new_context(ignore_https_errors=True)
-        page = await context.new_page()
-        return page
+    context = await browser.new_context(ignore_https_errors=True)
+    page = await context.new_page()
+    return page
 
 async def refreshPage(page):
-    async with pageLock:
-        output.info("Refreshing browser context")
+    output.info("Refreshing browser context")
 
-        browser = page.context.browser
-        
-        try:
-            if not page.is_closed():
-                await page.close()
-        except Exception:
-            pass
+    browser = page.context.browser
+    
+    try:
+        if not page.is_closed():
+            await page.close()
+    except Exception:
+        pass
 
-        try:
-            await page.context.close()
-        except Exception:
-            pass
+    try:
+        await page.context.close()
+    except Exception:
+        pass
 
-        context = await browser.new_context(ignore_https_errors=True)
-        new_page = await context.new_page()
+    context = await browser.new_context(ignore_https_errors=True)
+    new_page = await context.new_page()
 
-        return new_page
+    return new_page
 
 # --------------------------------------------------------------------
 # Store secrets
