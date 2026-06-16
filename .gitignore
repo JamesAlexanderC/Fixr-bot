@@ -1,4 +1,5 @@
 .env
 secrets.txt
 accounts.json
-card.txt
+card.json
+event.json
