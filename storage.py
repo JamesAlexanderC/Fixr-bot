@@ -3,13 +3,10 @@ import json
 # --------------------------------------------------------------------
 # Bot variables
 # --------------------------------------------------------------------
-global card
 card = {}
 
-global accounts
-accounts = {}
+accounts = []
 
-global event
 event = {}
 
 # --------------------------------------------------------------------
@@ -54,8 +51,8 @@ async def addAccount( # An account being added here should be a fully verified f
     global accounts
     with open('accounts.json', 'r') as f:
         accounts = json.load(f)
-        for i in range(len(accounts)):
-            if accounts[i]['email'] == email:
+        for acct in accounts:
+            if acct.get('email') == email:
                 return False # Account already exists
     
     accounts.append({'email': email, 'password': password})
