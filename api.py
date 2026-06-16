@@ -6,6 +6,10 @@ from engine import inputQueue, stopEvent
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("favicon.ico")
+
 @app.post("/custom")
 async def send_custom_message(data: dict):
     msg = data.get("msg")

@@ -9,6 +9,12 @@
         stylesheet.rel = 'stylesheet';
         stylesheet.href = location.protocol === 'file:' ? 'style.css' : '/static/style.css';
         document.head.appendChild(stylesheet);
+
+        const favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/x-icon';
+        favicon.href = location.protocol === 'file:' ? '../favicon.ico' : '/favicon.ico';
+        document.head.appendChild(favicon);
     </script>
 </head>
 <body>
