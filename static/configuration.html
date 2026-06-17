@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Fixr Bot Configuration</title>
+	<script>
+		const stylesheet = document.createElement('link');
+		stylesheet.rel = 'stylesheet';
+		stylesheet.href = location.protocol === 'file:' ? 'configuration.css' : '/static/configuration.css';
+		document.head.appendChild(stylesheet);
+
+		const favicon = document.createElement('link');
+		favicon.rel = 'icon';
+		favicon.type = 'image/x-icon';
+		favicon.href = location.protocol === 'file:' ? '../favicon.ico' : '/favicon.ico';
+		document.head.appendChild(favicon);
+	</script>
+</head>
+<body>
+	<div class="wrap">
+		<div class="header">
+			<h1>Fixr Bot Configuration</h1>
+			<a class="back-link" href="/">Back to Control Panel</a>
+		</div>
+
+		<div class="card">
+			<h2>Event</h2>
+			<div class="grid-2">
+				<label>
+					Organiser URL
+					<input id="organiserUrl" placeholder="https://fixr.co/organiser/..." />
+				</label>
+				<label>
+					Ticket keyword
+					<input id="ticketKeyword" placeholder="General Admission" />
+				</label>
+				<label>
+					Time slot index
+					<input id="eventTime" type="number" min="1" step="1" placeholder="1" />
+				</label>
+			</div>
+			<div class="actions">
+				<button onClick="loadEventConfig()">Load Event</button>
+				<button class="accent" onClick="saveEventConfig()">Save Event</button>
+			</div>
+		</div>
+
+		<div class="card">
+			<h2>Card</h2>
+			<div class="grid-2">
+				<label>
+					Card number
+					<input id="cardNumber" inputmode="numeric" placeholder="0000 0000 0000 0000" />
+				</label>
+				<label>
+					Expiry
+					<input id="cardExpiry" placeholder="MM/YY" />
+				</label>
+				<label>
+					CVC
+					<input id="cardCvc" inputmode="numeric" placeholder="123" />
+				</label>
+				<label>
+					Postcode
+					<input id="cardPostcode" placeholder="AB12 3CD" />
+				</label>
+			</div>
+			<p class="hint">Card details cannot be loaded back for security reasons. Enter details to update only.</p>
+			<div class="actions">
+				<button class="accent" onClick="saveCardConfig()">Save Card</button>
+			</div>
+		</div>
+
+		<div class="card">
+			<h2>Accounts</h2>
+			<div class="grid-2">
+				<label>
+					Email
+					<input id="accountEmail" type="email" placeholder="name@example.com" />
+				</label>
+				<label>
+					Password
+					<input id="accountPassword" type="password" placeholder="Password" />
+				</label>
+			</div>
+			<div class="actions">
+				<button onClick="loadAccounts()">Refresh Accounts</button>
+				<button class="accent" onClick="addAccount()">Add Account</button>
+			</div>
+			<div id="accountsList" class="account-list">No accounts loaded.</div>
+		</div>
+
+		<div class="card">
+			<h2>Status</h2>
+			<div id="status" class="status">Ready.</div>
+		</div>
+	</div>
+
+	<script>
+		function setStatus(message, isError = false) {
+			const status = document.getElementById('status');
+			status.textContent = message;
+			status.className = isError ? 'status error' : 'status';
+		}
+
+		async function request(url, options = {}) {
+			const response = await fetch(url, options);
+			let data;
+
+			try {
+				data = await response.json();
+			} catch {
+				data = null;
+			}
+
+			if (!response.ok) {
+				const detail = data && data.detail ? data.detail : `HTTP ${response.status}`;
+				throw new Error(detail);
+			}
+
+			return data;
+		}
+
+		async function loadEventConfig() {
+			try {
+				setStatus('Loading event configuration...');
+				const data = await request('/event');
+				const event = data.event || {};
+				document.getElementById('organiserUrl').value = event.EVENT_URL || '';
+				document.getElementById('ticketKeyword').value = event.EVENT_NAME || '';
+				document.getElementById('eventTime').value = event.EVENT_TIME || '';
+				setStatus('Event configuration loaded.');
+			} catch (error) {
+				setStatus(`Failed to load event: ${error.message}`, true);
+			}
+		}
+
+		async function saveEventConfig() {
+			const organiserUrl = document.getElementById('organiserUrl').value.trim();
+			const ticketKeyword = document.getElementById('ticketKeyword').value.trim();
+			const time = document.getElementById('eventTime').value.trim();
+
+			try {
+				setStatus('Saving event configuration...');
+				await request('/event', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({ organiserUrl, ticketKeyword, time }),
+				});
+				setStatus('Event configuration saved.');
+			} catch (error) {
+				setStatus(`Failed to save event: ${error.message}`, true);
+			}
+		}
+
+		async function saveCardConfig() {
+			const cardNumber = document.getElementById('cardNumber').value.trim();
+			const cardExpiry = document.getElementById('cardExpiry').value.trim();
+			const cardCvc = document.getElementById('cardCvc').value.trim();
+			const cardPostcode = document.getElementById('cardPostcode').value.trim();
+
+			try {
+				setStatus('Saving card configuration...');
+				await request('/card', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({ cardNumber, cardExpiry, cardCvc, cardPostcode }),
+				});
+				setStatus('Card configuration saved.');
+			} catch (error) {
+				setStatus(`Failed to save card: ${error.message}`, true);
+			}
+		}
+
+		function renderAccounts(accounts) {
+			const container = document.getElementById('accountsList');
+			if (!Array.isArray(accounts) || accounts.length === 0) {
+				container.textContent = 'No accounts configured.';
+				return;
+			}
+
+			const lines = accounts.map((account, index) => `${index + 1}. ${account.email || '(missing email)'}`);
+			container.textContent = lines.join('\n');
+		}
+
+		async function loadAccounts() {
+			try {
+				setStatus('Loading accounts...');
+				const data = await request('/accounts');
+				renderAccounts(data.accounts || []);
+				setStatus('Accounts loaded.');
+			} catch (error) {
+				setStatus(`Failed to load accounts: ${error.message}`, true);
+			}
+		}
+
+		async function addAccount() {
+			const email = document.getElementById('accountEmail').value.trim();
+			const password = document.getElementById('accountPassword').value;
+
+			try {
+				setStatus('Adding account...');
+				await request('/account', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({ email, password }),
+				});
+
+				document.getElementById('accountPassword').value = '';
+				await loadAccounts();
+				setStatus('Account added.');
+			} catch (error) {
+				setStatus(`Failed to add account: ${error.message}`, true);
+			}
+		}
+
+		loadEventConfig();
+		loadAccounts();
+	</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from engine import inputQueue, stopEvent
@@ -36,14 +37,18 @@ async def start_heartbeat():
 async def hello():
     return FileResponse("static/index.html")
 
+@app.get("/configuration")
+async def configuration():
+    return FileResponse("static/configuration.html")
+
 @app.post("/card")
 async def edit_card(data: dict):
-    if not all([cardNumber, data.get("cardExpiry"), data.get("cardCvc"), data.get("cardPostcode")]):
-        return {"status": "error", "message": "Missing required fields"}, 400
     cardNumber = data.get("cardNumber")
     cardExpiry = data.get("cardExpiry")
     cardCvc = data.get("cardCvc")
     cardPostcode = data.get("cardPostcode")
+    if not all([cardNumber, cardExpiry, cardCvc, cardPostcode]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
     await storage.editCard(cardNumber, cardExpiry, cardCvc, cardPostcode)
     return {"status": "ok"}
 
@@ -57,10 +62,10 @@ async def add_account(data: dict):
     email = data.get("email")
     password = data.get("password")
     if not all([email, password]):
-        return {"status": "error", "message": "Missing required fields"}, 400
+        raise HTTPException(status_code=400, detail="Missing required fields")
     result = await storage.addAccount(email, password)
     if not result:
-        return {"status": "error", "message": "Account already exists"}, 400
+        raise HTTPException(status_code=400, detail="Account already exists")
     return {"status": "ok"}
 
 @app.get("/event")
@@ -74,6 +79,6 @@ async def edit_event(data: dict):
     ticketKeyword = data.get("ticketKeyword")
     time = data.get("time")
     if not all([organiserUrl, ticketKeyword, time]):
-        return {"status": "error", "message": "Missing required fields"}, 400
+        raise HTTPException(status_code=400, detail="Missing required fields")
     await storage.editEvent(organiserUrl, ticketKeyword, time)
     return {"status": "ok"}

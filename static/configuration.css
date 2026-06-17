@@ -1,0 +1,144 @@
+:root {
+	color-scheme: dark;
+	--bg: #0f1115;
+	--card: #171a21;
+	--text: #e8edf5;
+	--muted: #a0a9b8;
+	--accent: #4f8cff;
+	--danger: #ef5350;
+	--border: #2a2f3a;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+}
+
+.wrap {
+	max-width: 920px;
+	margin: 32px auto;
+	padding: 0 16px;
+	display: grid;
+	gap: 16px;
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.header h1 {
+	margin: 0;
+	font-size: 1.6rem;
+}
+
+.back-link {
+	color: var(--accent);
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.card {
+	background: var(--card);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 16px;
+}
+
+.card h2 {
+	margin-top: 0;
+	margin-bottom: 14px;
+	font-size: 1.15rem;
+}
+
+.hint {
+	margin: 12px 0 0;
+	color: var(--muted);
+	font-size: 0.9rem;
+}
+
+.grid-2 {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 12px;
+}
+
+label {
+	display: grid;
+	gap: 6px;
+	font-size: 0.93rem;
+	color: var(--muted);
+}
+
+input {
+	width: 100%;
+	border: 1px solid var(--border);
+	background: #10131a;
+	color: var(--text);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 0.95rem;
+}
+
+input:focus {
+	outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+	border-color: var(--accent);
+}
+
+.actions {
+	margin-top: 14px;
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+button {
+	border: 1px solid var(--border);
+	background: #1f2530;
+	color: var(--text);
+	border-radius: 8px;
+	padding: 9px 13px;
+	cursor: pointer;
+	font-weight: 600;
+}
+
+button:hover {
+	filter: brightness(1.08);
+}
+
+button.accent {
+	border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+	background: color-mix(in srgb, var(--accent) 30%, #1f2530);
+}
+
+.status,
+.account-list {
+	white-space: pre-wrap;
+	background: #10131a;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	padding: 12px;
+	min-height: 64px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+	font-size: 0.92rem;
+}
+
+.status.error {
+	border-color: color-mix(in srgb, var(--danger) 60%, var(--border));
+	color: #ffb6b5;
+}
+
+@media (max-width: 700px) {
+	.header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
