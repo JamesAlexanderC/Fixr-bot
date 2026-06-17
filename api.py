@@ -62,3 +62,18 @@ async def add_account(data: dict):
     if not result:
         return {"status": "error", "message": "Account already exists"}, 400
     return {"status": "ok"}
+
+@app.get("/event")
+async def get_event():
+    await storage.loadEvent()
+    return {"event": storage.event}
+
+@app.post("/event")
+async def edit_event(data: dict):
+    organiserUrl = data.get("organiserUrl")
+    ticketKeyword = data.get("ticketKeyword")
+    time = data.get("time")
+    if not all([organiserUrl, ticketKeyword, time]):
+        return {"status": "error", "message": "Missing required fields"}, 400
+    await storage.editEvent(organiserUrl, ticketKeyword, time)
+    return {"status": "ok"}
