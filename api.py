@@ -63,7 +63,14 @@ async def add_account(data: dict):
     password = data.get("password")
     if not all([email, password]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-    result = await storage.addAccount(email, password)
+
+    try:
+        result = await storage.addAccount(email, password)
+    except FileNotFoundError:
+        with open("accounts.json", "w") as f:
+            f.write("[]")
+        result = await storage.addAccount(email, password)
+
     if not result:
         raise HTTPException(status_code=400, detail="Account already exists")
     return {"status": "ok"}
