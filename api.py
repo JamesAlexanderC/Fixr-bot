@@ -77,7 +77,12 @@ async def add_account(data: dict):
 
 @app.get("/event")
 async def get_event():
-    await storage.loadEvent()
+    try:
+        await storage.loadEvent()
+    except FileNotFoundError:
+        storage.event = {}
+        with open("event.json", "w") as f:
+            f.write("{}")
     return {"event": storage.event}
 
 @app.post("/event")
