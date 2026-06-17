@@ -75,11 +75,9 @@ async def editEvent(
         time, # This defines the time the bot will buy, defined by a 1 indexed integer, 1 being the first time slot, 2 the second and so on
 ):
     global event
-    details = {'EVENT_URL': organiserUrl, 'EVENT_NAME': ticketKeyword, 'EVENT_TIME': time}
+    event = {'EVENT_URL': organiserUrl, 'EVENT_NAME': ticketKeyword, 'EVENT_TIME': time}
 
     with open('event.json', 'w') as f:
-        json.dump(details, f)
-    
-    await loadEvent()
+        json.dump(event, f)
 
     return True
