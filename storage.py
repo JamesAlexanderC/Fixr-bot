@@ -26,12 +26,10 @@ async def editCard(
         ):
     global card
     
-    details = {'CARD_NUMBER': cardNumber, 'CARD_EXPIRY': cardExpiry, 'CARD_CVC': cardCvc, 'CARD_POSTCODE': cardPostcode}
+    card = {'CARD_NUMBER': cardNumber, 'CARD_EXPIRY': cardExpiry, 'CARD_CVC': cardCvc, 'CARD_POSTCODE': cardPostcode}
 
     with open('card.json', 'w') as f:
-        json.dump(details, f)
-    
-    await loadCard()
+        json.dump(card, f)
 
     return True
 
