@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from engine import inputQueue, stopEvent
+import storage
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -34,3 +35,14 @@ async def start_heartbeat():
 @app.get("/")
 async def hello():
     return FileResponse("static/index.html")
+
+@app.post("/editCard")
+async def edit_card(data: dict):
+    if not all([cardNumber, data.get("cardExpiry"), data.get("cardCvc"), data.get("cardPostcode")]):
+        return {"status": "error", "message": "Missing required fields"}, 400
+    cardNumber = data.get("cardNumber")
+    cardExpiry = data.get("cardExpiry")
+    cardCvc = data.get("cardCvc")
+    cardPostcode = data.get("cardPostcode")
+    await storage.editCard(cardNumber, cardExpiry, cardCvc, cardPostcode)
+    return {"status": "ok"}
