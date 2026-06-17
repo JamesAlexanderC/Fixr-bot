@@ -36,7 +36,7 @@ async def start_heartbeat():
 async def hello():
     return FileResponse("static/index.html")
 
-@app.post("/editCard")
+@app.post("/card")
 async def edit_card(data: dict):
     if not all([cardNumber, data.get("cardExpiry"), data.get("cardCvc"), data.get("cardPostcode")]):
         return {"status": "error", "message": "Missing required fields"}, 400
@@ -45,4 +45,20 @@ async def edit_card(data: dict):
     cardCvc = data.get("cardCvc")
     cardPostcode = data.get("cardPostcode")
     await storage.editCard(cardNumber, cardExpiry, cardCvc, cardPostcode)
+    return {"status": "ok"}
+
+@app.get("/accounts")
+async def get_accounts():
+    await storage.loadAccounts()
+    return {"accounts": storage.accounts}
+
+@app.post("/account")
+async def add_account(data: dict):
+    email = data.get("email")
+    password = data.get("password")
+    if not all([email, password]):
+        return {"status": "error", "message": "Missing required fields"}, 400
+    result = await storage.addAccount(email, password)
+    if not result:
+        return {"status": "error", "message": "Account already exists"}, 400
     return {"status": "ok"}
