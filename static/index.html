@@ -4,6 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Fixr Bot Control</title>
+    <style>
+        /* Hides .hidden elements immediately at parse time so things like the
+           ticket-found banner can't flash on screen before style.css (which is
+           injected below, after a network round trip) has loaded. */
+        .hidden { display: none !important; }
+    </style>
     <script>
         const stylesheet = document.createElement('link');
         stylesheet.rel = 'stylesheet';
@@ -18,25 +24,86 @@
     </script>
 </head>
 <body>
+    <div id="ticketAlert" class="ticket-alert hidden" role="alert">
+        <div class="ticket-alert-content">
+            <strong>🎟️ Tickets found!</strong>
+            <span id="ticketAlertDetail"></span>
+        </div>
+        <button class="ticket-alert-close" onClick="dismissTicketAlert()" aria-label="Dismiss">&times;</button>
+    </div>
+
     <div class="wrap">
-        <div class="card">
+        <div class="header">
             <h1>Fixr Bot Control</h1>
-            <p>Use this page to initialise the bot, start the heartbeat, send a custom message, or shut everything down.</p>
-            <p><a href="/configuration">Open configuration</a></p>
+            <a class="back-link" href="/configuration">Open configuration</a>
+        </div>
+
+        <div class="card">
+            <h2>Event</h2>
+            <div class="event-row">
+                <span class="label">Organiser URL</span>
+                <a id="organiserUrl" class="value link" href="#" target="_blank" rel="noopener">Loading…</a>
+            </div>
+            <div class="event-row">
+                <span class="label">Ticket keyword</span>
+                <span id="ticketKeyword" class="value">—</span>
+            </div>
+            <div class="event-row">
+                <span class="label">Time slot index</span>
+                <span id="eventTimeSlot" class="value">—</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Bot Control</h2>
+            <div class="toggle-row">
+                <button id="heartbeatToggle" class="toggle-btn state-stopped" onClick="toggleHeartbeat()">
+                    <span class="dot"></span>
+                    <span id="heartbeatToggleLabel">Heartbeat Stopped — Start</span>
+                </button>
+            </div>
             <div class="grid">
                 <button class="accent" onClick="callApi('/init', 'POST', 'Initialise sent')">Initialise Bot</button>
-                <button class="accent" onClick="callApi('/start', 'POST', 'Heartbeat start sent')">Start Heartbeat</button>
                 <button class="danger" onClick="callApi('/shutdown', 'POST', 'Shutdown sent')">Shutdown</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>Custom message</h2>
-            <div class="row">
-                <input id="msg" placeholder="Message to queue" />
-                <button onClick="sendCustom()">Send</button>
+            <h2>Heartbeat Stats</h2>
+            <div class="stats-grid">
+                <div class="stat">
+                    <span class="stat-label">Cycles</span>
+                    <span id="statCycles" class="stat-value">—</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Time since last cycle</span>
+                    <span id="statLastCycle" class="stat-value">—</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Running time</span>
+                    <span id="statRunningTime" class="stat-value">—</span>
+                </div>
             </div>
-            <p class="muted">Sends the raw text to <code>/custom</code> as <code>{"msg": "..."}</code>.</p>
+            <p id="statsNotice" class="muted notice hidden"></p>
+        </div>
+
+        <div id="flowStatsCard" class="card hidden">
+            <h2>Flow Results</h2>
+            <div class="stats-grid">
+                <div class="stat success">
+                    <span class="stat-label">Successful</span>
+                    <span id="flowSuccessful" class="stat-value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Failed</span>
+                    <span id="flowFailed" class="stat-value">0</span>
+                </div>
+                <div class="stat warning">
+                    <span class="stat-label">Restarted</span>
+                    <span id="flowRestarted" class="stat-value">0</span>
+                </div>
+            </div>
+            <div id="flowRestartBreakdown" class="chip-row"></div>
         </div>
 
         <div class="card">
@@ -46,26 +113,282 @@
     </div>
 
     <script>
-        async function callApi(url, method, okText, body) {
-            const status = document.getElementById('status');
-            status.textContent = 'Sending...';
+        // ====================================================================
+        // Generic request helpers
+        // ====================================================================
+
+        async function request(url, options = {}) {
+            const response = await fetch(url, options);
+            let data;
             try {
-                const res = await fetch(url, {
+                data = await response.json();
+            } catch {
+                data = null;
+            }
+            if (!response.ok) {
+                const detail = data && data.detail ? data.detail : `HTTP ${response.status}`;
+                throw new Error(detail);
+            }
+            return data;
+        }
+
+        function setStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'status error' : 'status';
+        }
+
+        /*
+         * POST /init (api.py: initialise_bot) — real, existing endpoint.
+         * Queues "INITIALISE"; engine.py sets state to IDLE and opens a browser page.
+         * Expected response: { "status": "ok" }. Success/failure of the actual
+         * initialisation is currently only logged server-side (output.info), not
+         * reported back through the API, so this just confirms the message queued.
+         *
+         * POST /shutdown (api.py: shutdown) — real, existing endpoint.
+         * Queues "SHUTDOWN". Note engine.queueHandler()'s SHUTDOWN branch is
+         * currently a no-op (`pass`), so the engine loop does not actually exit yet.
+         * Expected response: { "status": "shutting down" }.
+         */
+        async function callApi(url, method, okText, body) {
+            setStatus('Sending...');
+            try {
+                const data = await request(url, {
                     method,
                     headers: body ? {'Content-Type': 'application/json'} : {},
                     body: body ? JSON.stringify(body) : undefined,
                 });
-                const data = await res.json();
-                status.textContent = okText + '\n' + JSON.stringify(data, null, 2);
+                setStatus(okText + '\n' + JSON.stringify(data, null, 2));
             } catch (err) {
-                status.textContent = 'Request failed:\n' + err;
+                setStatus(`Request failed: ${err.message}`, true);
             }
         }
 
-        function sendCustom() {
-            const msg = document.getElementById('msg').value;
-            callApi('/custom', 'POST', 'Custom message sent', { msg });
+        // ====================================================================
+        // Event info
+        // ====================================================================
+
+        /*
+         * GET /event (api.py: get_event) — real, existing endpoint.
+         * Expected response: { "event": { "EVENT_URL": string, "EVENT_NAME": string, "EVENT_TIME": number } }
+         * "event" comes back as {} if event.json hasn't been configured yet
+         * (storage.py creates an empty file on first read).
+         */
+        async function loadEventInfo() {
+            const urlEl = document.getElementById('organiserUrl');
+            const keywordEl = document.getElementById('ticketKeyword');
+            const timeEl = document.getElementById('eventTimeSlot');
+            try {
+                const data = await request('/event');
+                const event = data.event || {};
+                if (event.EVENT_URL && /^https?:\/\//i.test(event.EVENT_URL)) {
+                    urlEl.textContent = event.EVENT_URL;
+                    urlEl.href = event.EVENT_URL;
+                } else {
+                    urlEl.textContent = 'Not configured';
+                    urlEl.removeAttribute('href');
+                }
+                keywordEl.textContent = event.EVENT_NAME || '—';
+                timeEl.textContent = event.EVENT_TIME ?? '—';
+            } catch (err) {
+                urlEl.textContent = `Failed to load (${err.message})`;
+                urlEl.removeAttribute('href');
+            }
         }
+
+        // ====================================================================
+        // Heartbeat start/stop toggle
+        // ====================================================================
+
+        /*
+         * POST /start (api.py: start_heartbeat) — real, existing endpoint.
+         * Queues "START_HEARTBEAT"; engine.py creates the ticketSearch() task.
+         * Expected response: { "status": "ok" }. This only confirms the message
+         * was queued, not that the heartbeat is actually running - the button's
+         * displayed state waits for the next /status poll (below) to confirm that.
+         */
+        async function startHeartbeatRequest() {
+            return request('/start', { method: 'POST' });
+        }
+
+        /*
+         * POST /stop — PLACEHOLDER, NOT IMPLEMENTED in api.py / engine.py.
+         * engine.queueHandler() has no "STOP_HEARTBEAT" branch and
+         * coroutines.ticketSearch() has no cancellation path, so this call will
+         * 404 against the current backend. This page assumes a future endpoint
+         * that queues a "STOP_HEARTBEAT" message and responds: { "status": "ok" }.
+         * The failure is caught in toggleHeartbeat() below and surfaced as a
+         * clearly labelled placeholder error rather than breaking the page.
+         */
+        async function stopHeartbeatRequest() {
+            return request('/stop', { method: 'POST' });
+        }
+
+        async function toggleHeartbeat() {
+            const running = lastStatus && lastStatus.heartbeat && lastStatus.heartbeat.running === true;
+            const btn = document.getElementById('heartbeatToggle');
+            btn.disabled = true;
+            try {
+                if (running) {
+                    await stopHeartbeatRequest();
+                    setStatus('Stop heartbeat sent.');
+                } else {
+                    await startHeartbeatRequest();
+                    setStatus('Start heartbeat sent.');
+                }
+            } catch (err) {
+                setStatus(`Heartbeat request failed: ${err.message}`, true);
+            } finally {
+                btn.disabled = false;
+                // Intentionally not flipped optimistically here - /status (polled
+                // below) is the single source of truth for whether the heartbeat
+                // is actually running.
+            }
+        }
+
+        function renderHeartbeatButton(running) {
+            const btn = document.getElementById('heartbeatToggle');
+            const label = document.getElementById('heartbeatToggleLabel');
+            const isRunning = running === true;
+            btn.classList.toggle('state-running', isRunning);
+            btn.classList.toggle('state-stopped', !isRunning);
+            label.textContent = isRunning ? 'Heartbeat Running — Stop' : 'Heartbeat Stopped — Start';
+        }
+
+        // ====================================================================
+        // Status polling: heartbeat stats, ticket-found alert, flow results
+        // ====================================================================
+
+        /*
+         * GET /status — PLACEHOLDER, NOT IMPLEMENTED in api.py.
+         * Polled every POLL_INTERVAL_MS. This page assumes the backend will
+         * eventually expose this route returning JSON shaped like:
+         *
+         * {
+         *   "heartbeat": {
+         *     "running": boolean,
+         *     "cycles": number,            // completed ticketSearch() loop iterations
+         *     "startedAt": string | null,  // ISO8601, set when START_HEARTBEAT is actioned
+         *     "lastCycleAt": string | null // ISO8601, set after each checkForTickets() pass
+         *   },
+         *   "ticketsFound": {
+         *     "found": boolean,
+         *     "detail": string | null,     // whatever checkForTickets() returned
+         *     "foundAt": string | null     // ISO8601, changes each time a NEW find happens
+         *   },
+         *   "flows": {
+         *     "completed": boolean,        // true once every getTickets() flow has finished
+         *     "successful": number,
+         *     "failed": number,
+         *     "restarted": [               // one entry per stage a flow was retried/restarted from
+         *       { "stage": "logging in" | "reserving" | "buying" | string, "count": number }
+         *     ]
+         *   }
+         * }
+         *
+         * Durations/elapsed times are deliberately NOT expected to be pre-formatted
+         * strings - the backend only needs to supply timestamps, and this page
+         * computes "time since" / "running time" client-side (see tick() below).
+         *
+         * Until this route exists every poll 404s. That failure is caught here
+         * and the affected panels are left in a clearly-labelled "unavailable"
+         * placeholder state instead of crashing the page.
+         */
+        const POLL_INTERVAL_MS = 3000;
+        const TICK_INTERVAL_MS = 1000;
+        let lastStatus = null;
+        let lastAlertedFoundAt = null;
+
+        async function pollStatus() {
+            try {
+                const data = await request('/status');
+                lastStatus = data;
+                document.getElementById('statsNotice').classList.add('hidden');
+
+                renderHeartbeatButton(data.heartbeat && data.heartbeat.running);
+                renderHeartbeatStats(data.heartbeat);
+                handleTicketAlert(data.ticketsFound);
+                renderFlowStats(data.flows);
+            } catch (err) {
+                lastStatus = null;
+                renderHeartbeatButton(false);
+                document.getElementById('statCycles').textContent = '—';
+                document.getElementById('statLastCycle').textContent = '—';
+                document.getElementById('statRunningTime').textContent = '—';
+                const notice = document.getElementById('statsNotice');
+                notice.textContent = `Live stats unavailable: ${err.message} (the /status endpoint is not implemented yet)`;
+                notice.classList.remove('hidden');
+            }
+        }
+
+        function renderHeartbeatStats(heartbeat) {
+            document.getElementById('statCycles').textContent = (heartbeat && heartbeat.cycles) ?? '—';
+        }
+
+        function formatDuration(ms) {
+            if (!Number.isFinite(ms) || ms < 0) return '—';
+            const totalSeconds = Math.floor(ms / 1000);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            return [h ? `${h}h` : null, (h || m) ? `${m}m` : null, `${s}s`].filter(Boolean).join(' ');
+        }
+
+        // Ticks every second between polls so the elapsed-time displays stay
+        // smooth without needing to hit /status more often than POLL_INTERVAL_MS.
+        function tick() {
+            if (!lastStatus || !lastStatus.heartbeat) return;
+            const { startedAt, lastCycleAt } = lastStatus.heartbeat;
+            document.getElementById('statRunningTime').textContent =
+                startedAt ? formatDuration(Date.now() - new Date(startedAt).getTime()) : '—';
+            document.getElementById('statLastCycle').textContent =
+                lastCycleAt ? `${formatDuration(Date.now() - new Date(lastCycleAt).getTime())} ago` : '—';
+        }
+
+        function handleTicketAlert(ticketsFound) {
+            if (!ticketsFound || !ticketsFound.found) return;
+            const key = ticketsFound.foundAt || 'unknown';
+            if (key === lastAlertedFoundAt) return; // already shown for this find
+            lastAlertedFoundAt = key;
+            document.getElementById('ticketAlertDetail').textContent = ticketsFound.detail || 'Tickets are available!';
+            document.getElementById('ticketAlert').classList.remove('hidden');
+        }
+
+        function dismissTicketAlert() {
+            document.getElementById('ticketAlert').classList.add('hidden');
+        }
+
+        function renderFlowStats(flows) {
+            const card = document.getElementById('flowStatsCard');
+            if (!flows || !flows.completed) {
+                card.classList.add('hidden');
+                return;
+            }
+            card.classList.remove('hidden');
+            document.getElementById('flowSuccessful').textContent = flows.successful ?? 0;
+            document.getElementById('flowFailed').textContent = flows.failed ?? 0;
+
+            const restarted = Array.isArray(flows.restarted) ? flows.restarted : [];
+            const restartedTotal = restarted.reduce((sum, r) => sum + (r.count || 0), 0);
+            document.getElementById('flowRestarted').textContent = restartedTotal;
+
+            const breakdown = document.getElementById('flowRestartBreakdown');
+            breakdown.innerHTML = '';
+            restarted.forEach((r) => {
+                const chip = document.createElement('span');
+                chip.className = 'chip';
+                chip.textContent = `${r.stage}: ${r.count}`;
+                breakdown.appendChild(chip);
+            });
+        }
+
+        // ====================================================================
+        // Boot
+        // ====================================================================
+        loadEventInfo();
+        pollStatus();
+        setInterval(pollStatus, POLL_INTERVAL_MS);
+        setInterval(tick, TICK_INTERVAL_MS);
     </script>
 </body>
 </html>
