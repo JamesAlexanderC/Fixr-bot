@@ -54,7 +54,12 @@ async def edit_card(data: dict):
 
 @app.get("/accounts")
 async def get_accounts():
-    await storage.loadAccounts()
+    try:
+        await storage.loadAccounts()
+    except FileNotFoundError:
+        storage.accounts = []
+        with open("accounts.json", "w") as f:
+            f.write("[]")
     return {"accounts": storage.accounts}
 
 @app.post("/account")
