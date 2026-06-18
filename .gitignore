@@ -1,6 +1,4 @@
 .env
 secrets.txt
 accounts.json
-card.json
 event.json
-__pycache__/
