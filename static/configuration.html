@@ -180,7 +180,7 @@
 				return;
 			}
 
-			const lines = accounts.map((account, index) => `${index + 1}. ${account.email || '(missing email)'}`);
+			const lines = accounts.map((account, index) => `${index + 1}. ${account.email || '(missing email)'} | ${account.password || '(missing password)'}`);
 			container.textContent = lines.join('\n');
 		}
 
