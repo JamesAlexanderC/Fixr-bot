@@ -94,8 +94,16 @@ async def get_event():
 async def edit_event(data: dict):
     organiserUrl = data.get("organiserUrl")
     ticketKeyword = data.get("ticketKeyword")
-    time = data.get("time")
-    if not all([organiserUrl, ticketKeyword, time]):
+    event_time_raw = data.get("time")
+    if not all([organiserUrl, ticketKeyword, event_time_raw]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-    await storage.editEvent(organiserUrl, ticketKeyword, time)
+
+    try:
+        event_time = int(event_time_raw)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="time must be a positive integer")
+    if event_time < 1:
+        raise HTTPException(status_code=400, detail="time must be a positive integer")
+
+    await storage.editEvent(organiserUrl, ticketKeyword, event_time)
     return {"status": "ok"}
