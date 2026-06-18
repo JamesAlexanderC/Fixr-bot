@@ -2,3 +2,5 @@
 secrets.txt
 accounts.json
 event.json
+card.json
+__pycache__/
