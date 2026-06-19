@@ -107,3 +107,50 @@ async def edit_event(data: dict):
 
     await storage.editEvent(organiserUrl, ticketKeyword, event_time)
     return {"status": "ok"}
+
+@app.post("/stop")
+async def stop_heartbeat():
+    await inputQueue.put("STOP_HEARTBEAT") # YET TO BE IMPLEMENTED IN QUEUEHANDLER
+    return {"status": "ok"}
+
+@app.get("/status")
+async def get_status():
+    return {"status": "unimplemented"}
+
+# Specs below: 
+
+'''
+         * GET /status — PLACEHOLDER, NOT IMPLEMENTED in api.py.
+         * Polled every POLL_INTERVAL_MS. This page assumes the backend will
+         * eventually expose this route returning JSON shaped like:
+         *
+         * {
+         *   "heartbeat": {
+         *     "running": boolean,
+         *     "cycles": number,            // completed ticketSearch() loop iterations
+         *     "startedAt": string | null,  // ISO8601, set when START_HEARTBEAT is actioned
+         *     "lastCycleAt": string | null // ISO8601, set after each checkForTickets() pass
+         *   },
+         *   "ticketsFound": {
+         *     "found": boolean,
+         *     "detail": string | null,     // whatever checkForTickets() returned
+         *     "foundAt": string | null     // ISO8601, changes each time a NEW find happens
+         *   },
+         *   "flows": {
+         *     "completed": boolean,        // true once every getTickets() flow has finished
+         *     "successful": number,
+         *     "failed": number,
+         *     "restarted": [               // one entry per stage a flow was retried/restarted from
+         *       { "stage": "logging in" | "reserving" | "buying" | string, "count": number }
+         *     ]
+         *   }
+         * }
+         *
+         * Durations/elapsed times are deliberately NOT expected to be pre-formatted
+         * strings - the backend only needs to supply timestamps, and this page
+         * computes "time since" / "running time" client-side (see tick() below).
+         *
+         * Until this route exists every poll 404s. That failure is caught here
+         * and the affected panels are left in a clearly-labelled "unavailable"
+         * placeholder state instead of crashing the page.
+'''
