@@ -1,86 +1,117 @@
-# --------------------------------------------------------------------
-# Engine File, defines backend behaviour when different things happen
-# --------------------------------------------------------------------
+"""
+engine.py as of 26/07/2026
 
+### This file contains orchestration logic for the browser, it creates async tasks based on messages in the input queue, the messages it takes are defined below:
+
+start-scan-loop
+stop-scan-loop
+
+"""
+
+import json
 import asyncio
+import aiofiles
 from enum import Enum
 from coroutines import *
 from camoufox.async_api import AsyncCamoufox
 
 import output
-
-class State(str, Enum):
-    IDLE = "idle"
-    CREATING_ACCOUNT = "creating account"
-    SEARCHING = "searching"
-    LOGGING_IN = "logging in"
-    RESERVING = "reserving"
-    BUYING = "buying"
-    COMPLETED = "completed"
-    FAILED = "failed"
+import scan_loop
+import login
 
 inputQueue = asyncio.Queue()
 outputQueue = asyncio.Queue()
 stopEvent = asyncio.Event()
 
-INITIALISED = 0
+scan_session = None
+
+
+def log(msg):
+    with open("engine.log", "a") as f:
+        f.write("\n")
+        f.write(str(msg))
 
 # --------------------------------------------------------------------
-# Helper functions for a lil more decomposition
-# --------------------------------------------------------------------
-async def initialise(state):
-    output.info("Initialisation Requested")
-    if INITIALISED == 0:
-        state: State = State.IDLE
-        output.info("Thread Initialised")
-    else:
-        output.info("Thread Initialisation Failed (ALready Initialised)")
-    return state
-
-async def startHeartbeat(page):
-    output.info("Heartbeat Start requested")
-    asyncio.create_task(ticketSearch(page, inputQueue)) 
-
-
-# --------------------------------------------------------------------
-# Main Queue handler - basically takes messages from the queue, 
+# Main Queue handler - basically takes messages from the queue,
 # interprets them and executes them
 # --------------------------------------------------------------------
 
-async def queueHandler(state):
-    async with AsyncCamoufox(disable_coop=True) as browser:
-        while not stopEvent.is_set():
-            msg = await inputQueue.get()
-            output.info(f"got message: {msg}")
+async def queueHandler():
+    global scan_session
 
-            if msg == "INITIALISE":
-                state = await initialise(state)
-                
-            if msg == "DISPLAY_INFO":
-                output.info(f'Thread State: {state}')
+    while not stopEvent.is_set():
 
-            if msg == "SHUTDOWN":
-                pass
-            
-            if msg == "START_HEARTBEAT":
-                print("TESTTTTTTTTTTTTTTTTTTTTTTTT")
-                page = await createPage(browser)
-                await startHeartbeat(page)
-            
-            if msg.split("|")[0] == "TICKETS_FOUND":
-                output.info("Getting tickets")
-                asyncio.create_task(getTickets(page, msg.split("|")[1], inputQueue))
+        msg = await inputQueue.get()
 
-            
+        if msg == "start-scan-loop":
+
+            if scan_session != None:
+                continue
+
+            try:
+                with open("accounts.json") as f:
+                    accounts = json.load(f)
+            except Exception as error:
+                log("error loading accounts.json")
+                log(error)
+
+            try:
+                account = list(accounts.keys())[0]
+            except IndexError:
+                log("no accounts stored")
+            except Exception as error:
+                log("error finding first stored account")
+                log(error)
+
+            try:
+                with open("event.json") as f:
+                    event = json.load(f)
+            except:
+                log("error loading event.json")
+                log(error)
+
+            try:
+                camoufox = AsyncCamoufox(disable_coop=True)
+                browser = await camoufox.__aenter__()
+                page = await browser.new_page()
+            except Exception as error:
+                log("error starting camoufox")
+                log(error)
+
+            try:
+                page = await login.login(page=page, email=account, password=accounts[account])
+            except Exception as error:
+                log("error logging in")
+                log(error)
+
+            try:
+                task = asyncio.create_task(
+                    scan_loop.run(
+                        page=page,
+                        url=event["organiser_url"],
+                        ticket_keyword=event["ticket_keyword"],
+                        interval=int(event["scan_interval"])
+                    )
+                )
+            except Exception as error:
+                log("error during scan loop")
+                log(error)
+
+            scan_session = {"camoufox": camoufox, "browser": browser, "task": task}
+
+        if msg == "stop-scan-loop":
+
+            if scan_session == None:
+                continue
+
+            scan_session["task"].cancel()
+
+            await scan_session["camoufox"].__aexit__(None, None, None)
+
+            scan_session = None
+
+    
 
 # TESTING
-async def ticket_check_loop():
-    async with AsyncCamoufox(
-            geoip=True,
-            i_know_what_im_doing=True,
-            disable_coop=True
-        ) as browser:
-        pass
-
 if __name__ == "__main__":
-    asyncio.run(ticket_check_loop(State.IDLE))
+    pass

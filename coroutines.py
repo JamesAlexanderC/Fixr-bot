@@ -3,8 +3,8 @@ import os
 from camoufox.async_api import AsyncCamoufox
 
 from checkout import buyTickets
-from ticketFunctions import checkForTickets, loginToAccount, reserveTickets
 import output
+from unused import reserveTickets
 
 # --------------------------------------------------------------------
 # The 'Get Tickets' flow, made it very robust
@@ -42,7 +42,7 @@ async def _run_ticket_flow(browser, url, account_code):
     try:
         for i in range(3):
             try:
-                await loginToAccount.login(page, account_code)
+                await login.login(page, account_code)
                 output.info(f"login successful for account {account_code}")
                 break
             except Exception as exc:
@@ -111,7 +111,7 @@ async def ticketSearch(page, queue):
         await asyncio.sleep(3)
 
         try:
-            there = await checkForTickets.check(page)
+            there = await scan_loop.check(page)
 
         except:
             output.info(f"search failed on attempt {i+1}, requesting browser refresh")

@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from camoufox.async_api import AsyncCamoufox
 from time import sleep
 
-import loginToAccount
-import reserveTickets
+import login as login
+import unused.reserveTickets as reserveTickets
 import checkout.buyTickets as buyTickets
 
 load_dotenv()
@@ -26,7 +26,7 @@ proxy={
 '''
 
 async def test_login_reserve_buy(page):
-    page = await loginToAccount.login(page, 1)
+    page = await login.login(page, 1)
     print('async login complete')
     page = await reserveTickets.reserve(page, 'https://fixr.co/event/sketch-1206-tickets-987734962/tickets?lang=en-US')
     print('async reservation complete')

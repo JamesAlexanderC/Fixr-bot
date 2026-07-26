@@ -4,21 +4,16 @@ Async version of loginToAccount
 '''
 # ----------------------------------------------------
 
-import os
-from asyncio import sleep
-from dotenv import load_dotenv
 
+import asyncio
 
-async def login(page, code):
-    load_dotenv()
-
-    account_code = str(code)
-    email = os.getenv(f'ACCE{account_code}')
-    password = os.getenv(f'ACCP{account_code}')
-
-    if email is None or password is None:
-        raise ValueError(f'ACCE{account_code} and ACCP{account_code} must be set in the environment')
-
+async def login(
+    page, 
+    email,
+    password
+):
+    with open("test", "w") as f:
+        f.write("4")
     # STEP 1
     await page.goto('https://fixr.co/login')
 
@@ -36,6 +31,12 @@ async def login(page, code):
 
     # WAIT FOR IDLE NETWORK
     await page.wait_for_load_state('load')
-    await sleep(5)
+    await asyncio.sleep(5)
 
     return page
+
+# Dev Test Code
+import os; from dotenv import load_dotenv; from camoufox.async_api import AsyncCamoufox
+async def test(email, password): 
+    async with AsyncCamoufox(disable_coop=True) as browser: page = await browser.new_page(); await login(page,email,password)
+if __name__ == "__main__": load_dotenv(); email = os.getenv('TEST_EMAIL'); password = os.getenv('TEST_PASSWORD'); asyncio.run(test(email, password))

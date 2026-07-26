@@ -1,0 +1,43 @@
+<head>
+    <title>Fixr-Bot Dashboard</title>
+    <script type="text/javascript" src="static/scripts/dashboard.js"></script>
+    <link rel="stylesheet" href="static/styles/shared.css">
+    <link rel="stylesheet" href="static/styles/dashboard.css">
+</head>
+<body>
+
+    <h1 id="title">Fixr-bot Control Panel</h1>
+
+    <div id="main">
+
+        <button type="button" onclick="startscan()">Start Scan</button>
+
+        <button type="button" onclick="stopscan()">Stop Scan</button>
+
+        <button type="button" onclick="refresh()"></button>
+
+        <div id="event">
+            
+            <div id="orgainiser-url">
+                <p>Organiser URL</p>
+                <input type="text"></input>
+            </div>
+            
+            <div id="ticket-keyword">
+                <p>Ticket Keyword</p>
+                <input type="text" id="ticket-keyword"></input>
+            </div>
+            
+            <div id="scan-interval">
+                <p>Scan Interval</p>
+                <input type="text" id="scan-interval"></input>
+            </div>
+
+            <button type="button" onclick="editevent()">Submit</button>
+
+        </div>
+
+        <div id="accounts"></div>
+    
+    </div>
+</body>

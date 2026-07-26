@@ -1,7 +1,7 @@
 """
 # API.py as of 26/07/2026
 
-### This file contains the FastAPI server, and exposes the endpoints defined boloew:
+### This file contains the FastAPI server, and exposes the endpoints defined bolow:
 - /edit-card: (POST) edits stored card with given details, returns 400 if details are incomplete, 400 if loop is active
 
 - /accounts: (GET) lists all currently stored accounts
@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 import json, aiofiles
 
 # Internal Imports
-from engine import inputQueue, stopEvent
+from engine import inputQueue, scan_session
 import storage
 
 # Setup FastAPI
@@ -35,6 +35,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse("favicon.ico")
+
+# Interace
+@app.get("/dashboard")
+async def control_dash():
+    return FileResponse("static/dashboard.html")
 
 # POST edit card
 @app.post("/edit-card", status_code=201)
@@ -71,10 +76,11 @@ async def get_accounts():
     return accounts
 
 # POST accounts
-@app.post("/accounts")
+@app.post("/accounts", status_code=201)
 async def add_account(data: dict):
 
-    # IF LOOP IS ACTIVE RETURN 400 (DETAIL LOOP IS ACTIVE)
+    if scan_session != None:
+        raise HTTPException(status_code=400, detail="Scan loop in progress")
 
     email = data.get("email")
     password = data.get("password")
@@ -83,9 +89,8 @@ async def add_account(data: dict):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     try:
-        async with aiofiles.open("accounts.json") as f:
-            contents = await f.read()
-            accounts = json.loads(contents)
+        with open("accounts.json") as f:
+            accounts = json.load(f)
 
     except FileNotFoundError:
         accounts = {}
@@ -96,7 +101,7 @@ async def add_account(data: dict):
     accounts[email] = password
 
     try:
-        async with open("accounts.json", "w") as f:
+        with open("accounts.json", "w") as f:
             json.dump(accounts, f)
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to save accounts")
@@ -106,39 +111,45 @@ async def add_account(data: dict):
 # GET event
 @app.get("/event")
 async def get_event():
+
     try:
-        await storage.loadEvent()
+        with open("event.json", "r") as f:
+            event = json.load(f)
+
     except FileNotFoundError:
-        storage.event = {}
-        with open("event.json", "w") as f:
-            f.write("{}")
-    return {"event": storage.event}
+        event = {
+            "organiser_url": "",
+            "ticket_keyword": "",
+            "scan_interval": "5"
+        }
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to load event") from error
+
+    return event
 
 # POST event
-@app.post("/event")
+@app.post("/event", status_code=201)
 async def edit_event(data: dict):
-    organiserUrl = data.get("organiserUrl")
-    ticketKeyword = data.get("ticketKeyword")
-    event_time_raw = data.get("time")
-    if not all([organiserUrl, ticketKeyword, event_time_raw]):
+
+    if not all([data.get("organiser_url"), data.get("ticket_keyword"), data.get("scan_interval")]):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     try:
-        event_time = int(event_time_raw)
-    except (TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="time must be a positive integer")
-    if event_time < 1:
-        raise HTTPException(status_code=400, detail="time must be a positive integer")
+        with open("event.json", "w") as f:
+            json.dump(data, f)
 
-    await storage.editEvent(organiserUrl, ticketKeyword, event_time)
-    return {"status": "ok"}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to load event") from error
+    
+    return data
 
 # start scan
 @app.get("/start-scan")
 async def start_scan():
-    pass
+    await inputQueue.put("start-scan-loop")
 
 # stop scan
 @app.get("/stop-scan")
 async def stop_scan():
-    pass
+    await inputQueue.put("stop-scan-loop")
