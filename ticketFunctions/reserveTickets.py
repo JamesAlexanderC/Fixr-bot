@@ -12,6 +12,9 @@ async def reserve(page, url):
 
     number = os.getenv('TICKET_NUMBER')
 
+    if number is not None and not number.isdigit():
+        raise ValueError('TICKET_NUMBER must be a positive integer')
+
     # STEP 1
     await page.goto(url, wait_until="domcontentloaded")
     await page.wait_for_load_state('networkidle')
@@ -25,9 +28,7 @@ async def reserve(page, url):
         before_fields = await page.locator('input:visible, select:visible, textarea:visible').count()
 
         # STEP 4
-        print(number)
         button = buttons.nth(int(number)-1)
-        print('test')
         await button.click(timeout = 3000)
 
         # STEP 5
@@ -38,7 +39,6 @@ async def reserve(page, url):
             await button.click()
             raise Exception("Requested ticket locked with promo code - switching to first found ticket")
     except:
-        print("SHOULD PRINT")
         for i in range(num_buttons):
             before_fields = await page.locator('input:visible, select:visible, textarea:visible').count()
 

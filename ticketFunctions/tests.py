@@ -7,7 +7,7 @@ from time import sleep
 
 import loginToAccount
 import reserveTickets
-import buyTickets
+import checkout.buyTickets as buyTickets
 
 load_dotenv()
 

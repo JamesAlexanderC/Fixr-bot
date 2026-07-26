@@ -2,3 +2,4 @@ uvicorn
 fastapi
 camoufox[geoip]
 dotenv
+aiofiles

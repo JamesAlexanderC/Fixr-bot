@@ -1,85 +1,109 @@
+"""
+# API.py as of 26/07/2026
+
+### This file contains the FastAPI server, and exposes the endpoints defined boloew:
+- /edit-card: (POST) edits stored card with given details, returns 400 if details are incomplete, 400 if loop is active
+
+- /accounts: (GET) lists all currently stored accounts
+- /accounts: (POST) stores new acount with given details, returns 400 if email is already stored, 400 if loop is active
+
+- /event: (GET) lists details about the currently stored event
+- /event: (POST) edits event with given details, 400 if scan loop is active
+
+- /start-scan (GET) starts the scanning loop, returns 400 if loop is active
+- /stop-scan (GET) starts the scanning loop, returns 400 if loop was not active
+
+There will be futher configuration and status endpoints added in future
+"""
+
+# External Imports
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+import json, aiofiles
+
+# Internal Imports
 from engine import inputQueue, stopEvent
 import storage
 
+# Setup FastAPI
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Icon for static pages
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse("favicon.ico")
 
-@app.post("/custom")
-async def send_custom_message(data: dict):
-    msg = data.get("msg")
-    await inputQueue.put(msg)
-    return {"status": "ok"}
+# POST edit card
+@app.post("/edit-card", status_code=201)
+async def edit_card(card: dict):
 
-@app.post("/shutdown")
-async def shutdown():
-    await inputQueue.put("SHUTDOWN")
-    return {"status": "shutting down"}
+    # IF LOOP IS ACTIVE RETURN 400 (DETAIL LOOP IS ACTIVE)
 
-@app.post("/init")
-async def initialise_bot():
-    await inputQueue.put("INITIALISE")
-    return {"status": "ok"}
-
-@app.post("/start")
-async def start_heartbeat():
-    await inputQueue.put("START_HEARTBEAT")
-    return {"status": "ok"}
-
-@app.get("/")
-async def hello():
-    return FileResponse("static/index.html")
-
-@app.get("/configuration")
-async def configuration():
-    return FileResponse("static/configuration.html")
-
-@app.post("/card")
-async def edit_card(data: dict):
-    cardNumber = data.get("cardNumber")
-    cardExpiry = data.get("cardExpiry")
-    cardCvc = data.get("cardCvc")
-    cardPostcode = data.get("cardPostcode")
-    if not all([cardNumber, cardExpiry, cardCvc, cardPostcode]):
+    if not all([card.get("cardNumber"), card.get("cardExpiry"), card.get("cardCvc"), card.get("cardPostcode")]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-    await storage.editCard(cardNumber, cardExpiry, cardCvc, cardPostcode)
-    return {"status": "ok"}
 
+    try:
+        async with aiofiles.open("card.json", "w") as f:
+           await f.write(json.dumps(card))
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to store card") from error
+
+    return {"status": "stored"}
+
+# GET accounts
 @app.get("/accounts")
 async def get_accounts():
     try:
-        await storage.loadAccounts()
-    except FileNotFoundError:
-        storage.accounts = []
-        with open("accounts.json", "w") as f:
-            f.write("[]")
-    return {"accounts": storage.accounts}
+        async with aiofiles.open("accounts.json") as f:
+            contents = await f.read()
+            accounts = json.loads(contents)
 
-@app.post("/account")
+    except FileNotFoundError:
+        accounts = {}
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to load accounts") from error
+
+    return accounts
+
+# POST accounts
+@app.post("/accounts")
 async def add_account(data: dict):
+
+    # IF LOOP IS ACTIVE RETURN 400 (DETAIL LOOP IS ACTIVE)
+
     email = data.get("email")
     password = data.get("password")
+
     if not all([email, password]):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     try:
-        result = await storage.addAccount(email, password)
+        async with aiofiles.open("accounts.json") as f:
+            contents = await f.read()
+            accounts = json.loads(contents)
+
     except FileNotFoundError:
-        with open("accounts.json", "w") as f:
-            f.write("[]")
-        result = await storage.addAccount(email, password)
+        accounts = {}
 
-    if not result:
-        raise HTTPException(status_code=400, detail="Account already exists")
-    return {"status": "ok"}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to load accounts") from error
 
+    accounts[email] = password
+
+    try:
+        async with open("accounts.json", "w") as f:
+            json.dump(accounts, f)
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to save accounts")
+        
+    return {email: password}
+
+# GET event
 @app.get("/event")
 async def get_event():
     try:
@@ -90,6 +114,7 @@ async def get_event():
             f.write("{}")
     return {"event": storage.event}
 
+# POST event
 @app.post("/event")
 async def edit_event(data: dict):
     organiserUrl = data.get("organiserUrl")
@@ -107,3 +132,13 @@ async def edit_event(data: dict):
 
     await storage.editEvent(organiserUrl, ticketKeyword, event_time)
     return {"status": "ok"}
+
+# start scan
+@app.get("/start-scan")
+async def start_scan():
+    pass
+
+# stop scan
+@app.get("/stop-scan")
+async def stop_scan():
+    pass

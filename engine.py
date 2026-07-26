@@ -34,7 +34,7 @@ async def initialise(state):
         state: State = State.IDLE
         output.info("Thread Initialised")
     else:
-        output.info("Threed Initialisation Failed (ALready Initialised)")
+        output.info("Thread Initialisation Failed (ALready Initialised)")
     return state
 
 async def startHeartbeat(page):
@@ -55,7 +55,6 @@ async def queueHandler(state):
 
             if msg == "INITIALISE":
                 state = await initialise(state)
-                page = await createPage(browser)
                 
             if msg == "DISPLAY_INFO":
                 output.info(f'Thread State: {state}')
@@ -64,6 +63,8 @@ async def queueHandler(state):
                 pass
             
             if msg == "START_HEARTBEAT":
+                print("TESTTTTTTTTTTTTTTTTTTTTTTTT")
+                page = await createPage(browser)
                 await startHeartbeat(page)
             
             if msg.split("|")[0] == "TICKETS_FOUND":

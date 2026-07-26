@@ -9,10 +9,11 @@ import os
 from dotenv import load_dotenv
 
 
-async def check(page):
+async def check(page, keyword=None):
     load_dotenv()
 
     url = os.getenv('ORGANISER_URL')
+    ticket_keyword = keyword or os.getenv('TICKET_KEYWORD', 'Wednesday')
 
     if url is None:
         raise ValueError('ORGANISER_URL must be set in the environment')
@@ -24,7 +25,7 @@ async def check(page):
     await page.wait_for_load_state('load')
 
     # STEP 3
-    tickets = page.get_by_text('Wednesday').first
+    tickets = page.get_by_text(ticket_keyword).first
 
     # STEP 4
     if await tickets.count() == 0:

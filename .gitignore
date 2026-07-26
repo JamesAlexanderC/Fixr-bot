@@ -1,7 +1,8 @@
 .env
-secrets.txt
 accounts.json
 event.json
 card.json
 __pycache__/
+checkout/
+tests/
 .venv/
