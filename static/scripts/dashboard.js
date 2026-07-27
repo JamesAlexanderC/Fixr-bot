@@ -18,15 +18,13 @@ async function editentry(entry) {
 
 async function displayaccounts() {
 
-    acounts = document.getElementById("accounts").innHTML = ""
-
     const response = await fetch("http://127.0.0.1:8000/accounts", {method: "GET"})
 
     const accounts = await response.json()
 
     let emails = Object.keys(accounts)
 
-    console.log(emails)
+    document.getElementById("accounts").innerHTML = ""
 
     for (let i=0; i<emails.length; i++) {
         entry = document.createElement("div");

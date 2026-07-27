@@ -1,9 +1,9 @@
-import asyncio
+"""import asyncio
 import os
 from camoufox.async_api import AsyncCamoufox
 
 from checkout import buyTickets
-import output
+import scan_loop
 from unused import reserveTickets
 
 # --------------------------------------------------------------------
@@ -166,4 +166,4 @@ async def runTests():
         await ticketSearch(page1, "test")
 
 if __name__ == "__main__":
-    asyncio.run(runTests())
+    asyncio.run(runTests())"""

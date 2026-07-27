@@ -25,7 +25,6 @@ import json, aiofiles
 
 # Internal Imports
 from engine import inputQueue, scan_session
-import storage
 
 # Setup FastAPI
 app = FastAPI()

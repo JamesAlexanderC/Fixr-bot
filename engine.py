@@ -10,12 +10,9 @@ stop-scan-loop
 
 import json
 import asyncio
-import aiofiles
-from enum import Enum
 from coroutines import *
 from camoufox.async_api import AsyncCamoufox
 
-import output
 import scan_loop
 import login
 
