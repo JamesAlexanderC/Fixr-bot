@@ -6,15 +6,19 @@
 </head>
 <body>
 
-    <h1 id="title">Fixr-bot Control Panel</h1>
+    <h1 id="title">Fixr-Bot Control Panel</h1>
 
     <div id="main">
 
-        <button type="button" onclick="startscan()">Start Scan</button>
+        <div id="control">
 
-        <button type="button" onclick="stopscan()">Stop Scan</button>
+            <button type="button" onclick="startscan()">Start Scan</button>
 
-        <button type="button" onclick="refresh()"></button>
+            <button type="button" onclick="stopscan()">Stop Scan</button>
+
+            <button type="button" onclick="refresh()" id="refresh"><img id="reload-icon" src="static\assets\reload.svg"/></button>
+
+        </div>
 
         <div id="event">
             

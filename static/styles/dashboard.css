@@ -1,31 +1,168 @@
+:root {
+    --accent: #5b6bf5;
+    --accent-hover: #4655e0;
+    --text-dark: #1b2430;
+    --border-soft: rgba(27, 36, 48, 0.14);
+}
+
 body {
-    background-color: var(--color1);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 4rem 1.5rem;
+    background: radial-gradient(circle at top, #232e3c 0%, var(--color1) 55%, #090d12 100%);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--color2);
 }
 
 #title {
-    position: absolute;
-    left: 50%;
-    top: 5%;
-    transform: translate(-50%, 0%)
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 
 #main {
     background-color: var(--color2);
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    padding: 5rem;
+    color: var(--text-dark);
+    width: min(100%, 640px);
+    border-radius: 1rem;
+    padding: 2.5rem 3rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
+    align-items: stretch;
+    gap: 1.5rem;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-#event{
+#control {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
     gap: 1rem;
+}
+
+button {
+    align-self: center;
+    min-width: 9rem;
+    padding: 0.65rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: var(--accent);
+    color: var(--color2);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+#refresh {
+    min-width: 0;
+    padding: 0.65rem;
+    line-height: 0;
+}
+
+#reload-icon {
+    width: 1rem;
+    height: 1rem;
+    filter: brightness(0) invert(1);
+}
+
+#event {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background-color: rgba(27, 36, 48, 0.05);
+    border: 1px solid var(--border-soft);
+    border-radius: 0.75rem;
+}
+
+#event > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1 1 10rem;
+}
+
+#event p {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+}
+
+#event input {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 0.4rem;
+    background-color: #ffffff;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+#event input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91, 107, 245, 0.2);
+}
+
+#event button {
+    flex: 0 0 auto;
+    align-self: flex-end;
+    padding: 0.55rem 1.4rem;
+}
+
+#accounts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+#accounts > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid var(--border-soft);
+    border-radius: 0.5rem;
+}
+
+#accounts input {
+    flex: 1 1 auto;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 0.35rem;
+    background-color: #f4f6f9;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+}
+
+#accounts button {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.4rem 0.9rem;
 }
