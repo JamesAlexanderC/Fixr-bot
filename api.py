@@ -152,3 +152,7 @@ async def start_scan():
 @app.get("/stop-scan")
 async def stop_scan():
     await inputQueue.put("stop-scan-loop")
+
+@app.post("/get-ticket")
+async def get_ticket(data: dict):
+    await inputQueue.put(f"get-ticket|{data["url"]}")

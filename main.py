@@ -9,7 +9,6 @@ import uvicorn
 
 # Internal Imports
 
-import output
 from engine import queueHandler, stopEvent
 from api import app
 # import ticketFunctions.createAccount as createAccount

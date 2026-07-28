@@ -4,16 +4,11 @@ Async version of reserveTickets
 '''
 # ----------------------------------------------------
 
-import os
-from dotenv import load_dotenv
-
-async def reserve(page, url):
-    load_dotenv()
-
-    number = os.getenv('TICKET_NUMBER')
-
-    if number is not None and not number.isdigit():
-        raise ValueError('TICKET_NUMBER must be a positive integer')
+async def run(
+    page, 
+    url, 
+    number
+):
 
     # STEP 1
     await page.goto(url, wait_until="domcontentloaded")

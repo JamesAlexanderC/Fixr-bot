@@ -7,7 +7,7 @@ Async version of loginToAccount
 
 import asyncio
 
-async def login(
+async def run(
     page, 
     email,
     password
@@ -38,5 +38,5 @@ async def login(
 # Dev Test Code
 import os; from dotenv import load_dotenv; from camoufox.async_api import AsyncCamoufox
 async def test(email, password): 
-    async with AsyncCamoufox(disable_coop=True) as browser: page = await browser.new_page(); await login(page,email,password)
+    async with AsyncCamoufox(disable_coop=True) as browser: page = await browser.new_page(); await run(page,email,password)
 if __name__ == "__main__": load_dotenv(); email = os.getenv('TEST_EMAIL'); password = os.getenv('TEST_PASSWORD'); asyncio.run(test(email, password))

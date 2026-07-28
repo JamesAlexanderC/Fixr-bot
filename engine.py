@@ -5,6 +5,7 @@ engine.py as of 26/07/2026
 
 start-scan-loop
 stop-scan-loop
+get-ticket|{URL}
 
 """
 
@@ -14,6 +15,7 @@ from coroutines import *
 from camoufox.async_api import AsyncCamoufox
 
 import scan_loop
+import get_ticket
 import login
 
 inputQueue = asyncio.Queue()
@@ -21,12 +23,29 @@ outputQueue = asyncio.Queue()
 stopEvent = asyncio.Event()
 
 scan_session = None
+reserve_sessions = []
 
 
-def log(msg):
-    with open("engine.log", "a") as f:
-        f.write("\n")
-        f.write(str(msg))
+async def login_get_ticket(
+        page,
+        email,
+        password,
+        code,
+        url,
+):
+    page = await login.run(
+        page=page,
+        email=email,
+        password=password,
+    )
+
+    page = await get_ticket.run(
+        page=page,
+        url=url,
+        number=code,
+    )
+
+    return page
 
 # --------------------------------------------------------------------
 # Main Queue handler - basically takes messages from the queue,
@@ -45,54 +64,32 @@ async def queueHandler():
             if scan_session != None:
                 continue
 
-            try:
-                with open("accounts.json") as f:
-                    accounts = json.load(f)
-            except Exception as error:
-                log("error loading accounts.json")
-                log(error)
+            with open("accounts.json") as f:
+                accounts = json.load(f)
 
-            try:
-                account = list(accounts.keys())[0]
-            except IndexError:
-                log("no accounts stored")
-            except Exception as error:
-                log("error finding first stored account")
-                log(error)
+            account = list(accounts.keys())[0]
 
-            try:
-                with open("event.json") as f:
-                    event = json.load(f)
-            except:
-                log("error loading event.json")
-                log(error)
+            with open("event.json") as f:
+                event = json.load(f)
+ 
+            camoufox = AsyncCamoufox()
+            browser = await camoufox.__aenter__()
+            page = await browser.new_page()
 
-            try:
-                camoufox = AsyncCamoufox(disable_coop=True)
-                browser = await camoufox.__aenter__()
-                page = await browser.new_page()
-            except Exception as error:
-                log("error starting camoufox")
-                log(error)
+            page = await login.run(
+                page=page, 
+                email=account, 
+                password=accounts[account]
+            )
 
-            try:
-                page = await login.login(page=page, email=account, password=accounts[account])
-            except Exception as error:
-                log("error logging in")
-                log(error)
-
-            try:
-                task = asyncio.create_task(
-                    scan_loop.run(
-                        page=page,
-                        url=event["organiser_url"],
-                        ticket_keyword=event["ticket_keyword"],
-                        interval=int(event["scan_interval"])
-                    )
+            task = asyncio.create_task(
+                scan_loop.run(
+                    page=page,
+                    url=event["organiser_url"],
+                    ticket_keyword=event["ticket_keyword"],
+                    interval=int(event["scan_interval"])
                 )
-            except Exception as error:
-                log("error during scan loop")
-                log(error)
+            )
 
             scan_session = {"camoufox": camoufox, "browser": browser, "task": task}
 
@@ -103,11 +100,43 @@ async def queueHandler():
 
             scan_session["task"].cancel()
 
-            await scan_session["camoufox"].__aexit__(None, None, None)
+            await scan_session["camoufox"].__aexit__(
+                None, 
+                None, 
+                None
+            )
 
             scan_session = None
 
-    
+        if msg.split("|")[0] == "get-ticket":
+
+            global reserve_sessions
+
+            with open("accounts.json") as f:
+                accounts = json.load(f)
+
+            for account in accounts.keys():
+
+                camoufox = AsyncCamoufox(disable_coop=True, i_know_what_im_doing=True)
+                browser = await camoufox.__aenter__()
+                page = await browser.new_page()
+
+                task = asyncio.create_task(
+                    login_get_ticket(
+                        page=page, 
+                        email=account, 
+                        password=accounts[account],
+                        code=1,
+                        url=msg.split("|")[1]
+                    )
+                )
+
+                reserve_sessions.append({"camoufox": camoufox, "browser": browser, page: "page", "task": task})
+
+        if msg.split("|")[0] == "got-ticket":
+            pass
+
+
 
 # TESTING
 if __name__ == "__main__":
