@@ -7,7 +7,7 @@ from time import sleep
 
 import login as login
 import get_ticket as get_ticket
-import checkout.buyTickets as buyTickets
+import checkout.buy_tickets as buy_tickets
 
 load_dotenv()
 
@@ -30,7 +30,7 @@ async def test_login_reserve_buy(page):
     print('async login complete')
     page = await get_ticket.reserve(page, 'https://fixr.co/event/sketch-1206-tickets-987734962/tickets?lang=en-US')
     print('async reservation complete')
-    page = await buyTickets.buy(page)
+    page = await buy_tickets.buy(page)
     await page.wait_for_timeout(300000)
 
 async def test_parallel_flow():

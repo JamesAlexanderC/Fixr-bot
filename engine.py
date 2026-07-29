@@ -5,11 +5,13 @@ engine.py as of 26/07/2026
 
 start-scan-loop
 stop-scan-loop
-get-ticket|{URL}
+get-tickets|{url}
+got-ticket|{session_name}
 
 """
 
 import json
+import uuid
 import asyncio
 from coroutines import *
 from camoufox.async_api import AsyncCamoufox
@@ -23,16 +25,25 @@ outputQueue = asyncio.Queue()
 stopEvent = asyncio.Event()
 
 scan_session = None
-reserve_sessions = []
+ticket_sessions = {}
 
 
 async def login_get_ticket(
-        page,
+        session_name,
         email,
         password,
         code,
         url,
 ):
+
+    camoufox = AsyncCamoufox(disable_coop=True, i_know_what_im_doing=True)
+    browser = await camoufox.__aenter__()
+    page = await browser.new_page()
+
+    ticket_sessions[session_name]["camoufox"] = camoufox
+    ticket_sessions[session_name]["browser"] = browser
+    ticket_sessions[session_name]["page"] = page
+    
     page = await login.run(
         page=page,
         email=email,
@@ -42,10 +53,15 @@ async def login_get_ticket(
     page = await get_ticket.run(
         page=page,
         url=url,
-        number=code,
+        number=code
     )
 
-    return page
+    await inputQueue.put(f"got-ticket|{session_name}")
+
+def log(msg):
+    with open("engine.log", "a") as f:
+        f.write("\n")
+        f.write(str(msg))
 
 # --------------------------------------------------------------------
 # Main Queue handler - basically takes messages from the queue,
@@ -53,7 +69,7 @@ async def login_get_ticket(
 # --------------------------------------------------------------------
 
 async def queueHandler():
-    global scan_session
+    global scan_session, inputQueue, ticket_sessions
 
     while not stopEvent.is_set():
 
@@ -76,20 +92,29 @@ async def queueHandler():
             browser = await camoufox.__aenter__()
             page = await browser.new_page()
 
-            page = await login.run(
-                page=page, 
-                email=account, 
-                password=accounts[account]
-            )
-
-            task = asyncio.create_task(
-                scan_loop.run(
-                    page=page,
-                    url=event["organiser_url"],
-                    ticket_keyword=event["ticket_keyword"],
-                    interval=int(event["scan_interval"])
+            try:
+                page = await login.run(
+                    page=page, 
+                    email=account, 
+                    password=accounts[account]
                 )
-            )
+            except:
+                log("login error")
+
+            log("login completed")
+
+            try:
+                task = asyncio.create_task(
+                    scan_loop.run(
+                        page=page,
+                        url=event["organiser_url"],
+                        ticket_keyword=event["ticket_keyword"],
+                        interval=int(event["scan_interval"]),
+                        inputQueue=inputQueue,
+                    )
+                )
+            except:
+                log("task failed to be made")
 
             scan_session = {"camoufox": camoufox, "browser": browser, "task": task}
 
@@ -108,33 +133,62 @@ async def queueHandler():
 
             scan_session = None
 
-        if msg.split("|")[0] == "get-ticket":
+        if msg.split("|")[0] == "get-tickets":
 
-            global reserve_sessions
+            scan_session["task"].cancel()
+
+            await scan_session["camoufox"].__aexit__(
+                None, 
+                None, 
+                None
+            )
+
+            scan_session = None
 
             with open("accounts.json") as f:
                 accounts = json.load(f)
 
             for account in accounts.keys():
 
-                camoufox = AsyncCamoufox(disable_coop=True, i_know_what_im_doing=True)
-                browser = await camoufox.__aenter__()
-                page = await browser.new_page()
+                session_name = str(uuid.uuid4())
 
                 task = asyncio.create_task(
                     login_get_ticket(
-                        page=page, 
+                        session_name=session_name,
                         email=account, 
                         password=accounts[account],
                         code=1,
-                        url=msg.split("|")[1]
+                        url=msg.split("|")[1],
                     )
                 )
 
-                reserve_sessions.append({"camoufox": camoufox, "browser": browser, page: "page", "task": task})
+                ticket_sessions[session_name]= {"task": task}
 
         if msg.split("|")[0] == "got-ticket":
-            pass
+
+            camoufox = ticket_sessions[msg.split("|")[1]]["camoufox"]
+            page = ticket_sessions[msg.split("|")[1]]["page"]
+
+            try:
+                from checkout import buy_tickets
+
+                with open("card.json", "r") as f:
+                    card = json.load(f)
+
+                await buy_tickets.run(
+                    session_name=msg.split("|")[1],
+                    page=page,
+                    cnumber=card["cnumber"],
+                    expiry=card["expiry"],
+                    cvc=card["cvc"],
+                    postal=card["postal"],
+                    inputQueue=inputQueue,
+                )
+
+            except:
+                pass
+
+            # THIS WILL BE WHERE THE CONFIGURABLE PUSH NOTIFIcATION IS TRIGGERED
 
 
 

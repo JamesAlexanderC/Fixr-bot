@@ -14,6 +14,7 @@ async def run(
     url,
     ticket_keyword,
     interval,
+    inputQueue,
 ):
 
     count = 0
@@ -92,4 +93,4 @@ async def run(
             raise error
 
         # STEP 10
-        return page.url
+        await inputQueue.put(f"get-tickets|{page.url}")
