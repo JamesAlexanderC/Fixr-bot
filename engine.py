@@ -24,6 +24,7 @@ inputQueue = asyncio.Queue()
 outputQueue = asyncio.Queue()
 stopEvent = asyncio.Event()
 
+# global vars for holding camoufox info
 scan_session = None
 ticket_sessions = {}
 
@@ -56,7 +57,7 @@ async def login_get_ticket(
         number=code
     )
 
-    await inputQueue.put(f"got-ticket|{session_name}")
+    await inputQueue.put(f"buy-ticket|{session_name}")
 
 def log(msg):
     with open("engine.log", "a") as f:
@@ -164,7 +165,7 @@ async def queueHandler():
 
                 ticket_sessions[session_name]= {"task": task}
 
-        if msg.split("|")[0] == "got-ticket":
+        if msg.split("|")[0] == "buy-ticket":
 
             camoufox = ticket_sessions[msg.split("|")[1]]["camoufox"]
             page = ticket_sessions[msg.split("|")[1]]["page"]
@@ -186,9 +187,18 @@ async def queueHandler():
                 )
 
             except:
-                pass
 
-            # THIS WILL BE WHERE THE CONFIGURABLE PUSH NOTIFIcATION IS TRIGGERED
+                url = ticket_sessions[msg.split("|")[1]]["page"].url
+
+                ticket_sessions[msg.split("|")[1]].cancel()
+
+                ticket_sessions[msg.split("|")[1]]["camoufox"].__aexit__(
+                    None,
+                    None,
+                    None,
+                )
+
+                # Sedn notification with url to email/whatsapp/discord/telegram
 
 
 

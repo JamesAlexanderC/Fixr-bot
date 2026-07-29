@@ -40,16 +40,18 @@ async function displayaccounts() {
     }
 }
 
-async function test() {
+async function editevent() {
     const response = await fetch(
-        "http://127.0.0.1:8000/get-ticket",
+        "http://127.0.0.1:8000/event",
         {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                "url": "https://fixr.co/event/rnb-indoor-beach-festival-bambuku-aruba-310726-tickets-560445700/tickets"
+                "organiser_url": document.getElementById("organiser-url-in").value,
+                "ticket_keyword": document.getElementById("ticket-keyword-in").value,
+                "scan_interval": document.getElementById("scan-interval-in").value
             })
         })
 }
