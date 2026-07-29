@@ -143,6 +143,18 @@ async def edit_event(data: dict):
     
     return data
 
+@app.post("/card", status_code=201)
+async def edit_card(data: dict):
+
+    if not all([data.get("cnumber"), data.get("expiry"), data.get("cvc"), data.get("postal")]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    try:
+        with open("card.json", "w") as f:
+            json.dump(data, f)
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="Failed to load event") from error
+
 # start scan
 @app.get("/start-scan")
 async def start_scan():

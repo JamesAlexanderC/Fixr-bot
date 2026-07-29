@@ -13,7 +13,6 @@ got-ticket|{session_name}
 import json
 import uuid
 import asyncio
-from coroutines import *
 from camoufox.async_api import AsyncCamoufox
 
 import scan_loop
