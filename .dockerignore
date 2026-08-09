@@ -1,0 +1,10 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.log
+.env
+accounts.json
+event.json
+card.json
+unused

@@ -23,7 +23,7 @@ async def startEngine():
     await asyncio.gather(handler, return_exceptions=True)
 
 async def startApi():
-    config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level=0)
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level=0)
     server = uvicorn.Server(config)
     await server.serve()
 

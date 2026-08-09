@@ -1,11 +1,11 @@
 let event = {}
 
 async function startscan() {
-    const response = await fetch("http://127.0.0.1:8000/start-scan", {method: "GET"});
+    const response = await fetch("/start-scan", {method: "GET"});
 }
 
 async function stopscan() {
-    const response = await fetch("http://127.0.0.1:8000/stop-scan", {method: "GET"});
+    const response = await fetch("/stop-scan", {method: "GET"});
 }
 
 async function refresh() {
@@ -18,7 +18,7 @@ async function editentry(entry) {
 
 async function displayaccounts() {
 
-    const response = await fetch("http://127.0.0.1:8000/accounts", {method: "GET"})
+    const response = await fetch("/accounts", {method: "GET"})
 
     const accounts = await response.json()
 
@@ -42,7 +42,7 @@ async function displayaccounts() {
 
 async function editevent() {
     const response = await fetch(
-        "http://127.0.0.1:8000/event",
+        "/event",
         {
             method: "POST",
             headers: {
