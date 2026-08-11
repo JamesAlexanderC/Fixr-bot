@@ -15,11 +15,8 @@ from api import app
 
 async def startEngine():
     handler = asyncio.create_task(queueHandler())
-
     await stopEvent.wait()
-
     handler.cancel()
-    
     await asyncio.gather(handler, return_exceptions=True)
 
 async def startApi():
@@ -28,6 +25,8 @@ async def startApi():
     await server.serve()
 
 async def main():
+    with open("log", "w") as f:
+        f.write("")
     await asyncio.gather(
         startEngine(),
         startApi()

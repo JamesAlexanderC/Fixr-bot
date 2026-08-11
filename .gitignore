@@ -7,3 +7,5 @@ checkout/
 tests/
 .venv/
 *.log
+checkout.py
+log
