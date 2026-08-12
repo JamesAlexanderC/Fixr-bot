@@ -12,6 +12,8 @@ echo "created accounts storage file" &&
 touch event.json &&
 echo '{"organiser_url": "https://fixr.co/organiser/timepiece", "ticket_keyword": "Saturday", "scan_interval": "5"}' > event.json &&
 echo "created event storage file" &&
+mkdir "logs" &&
+echo "created logs folder" &&
 echo "=================================" &&
 echo "         SETUP COMPLETE!         " &&
 echo "================================="

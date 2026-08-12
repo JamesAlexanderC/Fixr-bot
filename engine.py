@@ -19,14 +19,14 @@ import os
 import scan_loop
 import get_ticket
 import login
-import checkout
+import buy_ticket
 
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.propagate = False
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
-for _handler in (logging.StreamHandler(), logging.FileHandler("log")):
+for _handler in (logging.StreamHandler(), logging.FileHandler("logs/engine.log")):
     _handler.setFormatter(_formatter)
     logger.addHandler(_handler)
 
@@ -266,7 +266,7 @@ async def queueHandler():
                 logger.error("Error loading card: %s, ABORTING", str(e), exc_info=True)
                 continue
             try:
-                await checkout.buy(
+                await buy_ticket.buy(
                     page=page,
                     cnumber=card.get("cardNumber"),
                     expiry=card.get("cardExpiry"),

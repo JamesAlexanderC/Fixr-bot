@@ -6,6 +6,7 @@
 
 import asyncio
 import uvicorn
+import os
 
 # Internal Imports
 
@@ -25,8 +26,13 @@ async def startApi():
     await server.serve()
 
 async def main():
-    with open("log", "w") as f:
-        f.write("")
+    try:
+        for log in ["logs/engine.log", "logs/buy_ticket.log", "logs/get_ticket.log", "logs/scan_loop.log"]:
+            if os.path.exists(log):
+                with open(log, "a") as f:
+                    f.write("="*100 + "\n" + "SERVER START" + "\n" + "="*100 + "\n")
+    except Exception as e:
+        raise Exception(f"Cannot start logging: {str(e)}") from e
     await asyncio.gather(
         startEngine(),
         startApi()
