@@ -1,11 +1,9 @@
 .env
-accounts.json
-event.json
-card.json
 __pycache__/
 checkout/
 tests/
 .venv/
 *.log
+*.json
 buy_ticket.py
 log
