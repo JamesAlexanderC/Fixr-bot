@@ -15,6 +15,8 @@ import uuid
 import asyncio
 from camoufox.async_api import AsyncCamoufox
 import os
+import random
+from time import sleep # Testing only, should not be used as is blocking
 
 import scan_loop
 import get_ticket
@@ -35,8 +37,9 @@ outputQueue = asyncio.Queue()
 stopEvent = asyncio.Event()
 
 # global vars for holding camoufox info
-scan_session = {}
-ticket_sessions = {}
+scan_session: dict = {}
+ticket_sessions: dict = {}
+proxies_enabled: bool = True # FOR TESTING, SHLD DEFAULT TO FALSE
 
 
 
@@ -48,12 +51,36 @@ async def login_get_ticket(
         url,
 ):
     try:
-        camoufox = AsyncCamoufox(disable_coop=True, i_know_what_im_doing=True)
+        if proxies_enabled:
+            try:
+                if os.path.exists("proxies.json"):
+                    # Here we use the format server:port:username:password
+                    with open("proxies.json") as f:
+                        proxies = json.load(f)
+                    num_proxies = len(proxies)
+                    proxy = proxies[random.randint(0, num_proxies-1)].split(":")
+                else:
+                    raise Exception("No proxies file")
+                camoufox = AsyncCamoufox(
+                    proxy={
+                        "server": f"{proxy[0]}:{proxy[1]}",
+                        "username": proxy[2],
+                        "password": proxy[3]
+                    },
+                    geoip=True,
+                )
+                logger.debug("Proxies loaded successfully")
+            except Exception as e:
+                logger.error("Error loading proxies: %s", str(e), exc_info=True)
+                raise Exception(f"Error loading proxies: {str(e)}") from e
+        else:
+            camoufox = AsyncCamoufox()
         browser = await camoufox.__aenter__()
         page = await browser.new_page()
+        logger.debug("Camoufox started successfully")
     except Exception as e:
         logger.critical("Error starting Camoufox (this will be a pain to debug): %s, ABORTING", str(e), exc_info=True)
-        raise e
+        raise Exception(f"Error starting Camoufox (this will be a pain to debug): {str(e)}, ABORTING")
     global ticket_sessions
     ticket_sessions[session_name]["camoufox"] = camoufox
     ticket_sessions[session_name]["browser"] = browser
@@ -96,14 +123,13 @@ async def clean_camoufox(session: dict):
     except Exception as e:
         raise Exception(f"Error cancelling camoufox session: {str(e)}") from e
 
-
 # --------------------------------------------------------------------
-# Main Queue handler - basically takes messages from the queue,
+# Main Queue handler - takes messages from the queue,
 # interprets them and executes them
 # --------------------------------------------------------------------
 
 async def queueHandler():
-    global scan_session, inputQueue, ticket_sessions
+    global scan_session, inputQueue, ticket_sessions, proxies_enabled
     while not stopEvent.is_set():
         msg = await inputQueue.get()
         logger.info("Recieved message: %s", msg)
@@ -136,14 +162,44 @@ async def queueHandler():
                         logger.error("Error, incomplete event data, ABORTING")
                         continue
                     logger.debug("Event file loaded successfully")
+                else:
+                    raise Exception("No Event file")
             except Exception as e:
                 logger.error("Error loading event: %s, ABORTING", str(e), exc_info=True)
                 continue
             try:
-                camoufox = AsyncCamoufox()
+                if proxies_enabled:
+                    try:
+                        if os.path.exists("proxies.json"):
+                            # Here we use the format server:port:username:password
+                            with open("proxies.json") as f:
+                                proxies = json.load(f)
+                            num_proxies = len(proxies)
+                            proxy = proxies[random.randint(0, num_proxies-1)].split(":")
+                            logger.debug(f"proxy host: {proxy[0]}, proxy port: {proxy[1]}")
+                            logger.debug(f"proxy username: {proxy[2]}")
+                            logger.debug(f"proxy password: {proxy[3]}")
+                        else:
+                            raise Exception("No proxies file")
+                        camoufox = AsyncCamoufox(
+                            proxy={
+                                "server": f"{proxy[0]}:{proxy[1]}",
+                                "username": proxy[2],
+                                "password": proxy[3]
+                            },
+                            geoip=True,
+                        )
+                        logger.debug("Proxies loaded successfully")
+                    except Exception as e:
+                        logger.error("Error loading proxies: %s", str(e), exc_info=True)
+                        raise Exception(f"Error loading proxies: {str(e)}") from e
+                else:
+                    camoufox = AsyncCamoufox()
                 browser = await camoufox.__aenter__()
                 page = await browser.new_page()
                 logger.debug("Camoufox started successfully")
+                await page.goto("https://google.com")
+                sleep(10)
             except Exception as e:
                 logger.critical("Error starting Camoufox (this will be a pain to debug): %s, ABORTING", str(e), exc_info=True)
                 continue
@@ -195,6 +251,7 @@ async def queueHandler():
                     None, 
                     None
                 )
+                logger.debug("Stopped scan task successfully")
             except Exception as e:
                 logger.critical("Failed to stop coroutine and Camoufox instance: %s, ABORTING", str(e), exc_info=True)
                 continue
