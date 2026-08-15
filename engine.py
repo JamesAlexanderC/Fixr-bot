@@ -198,8 +198,6 @@ async def queueHandler():
                 browser = await camoufox.__aenter__()
                 page = await browser.new_page()
                 logger.debug("Camoufox started successfully")
-                await page.goto("https://google.com")
-                sleep(10)
             except Exception as e:
                 logger.critical("Error starting Camoufox (this will be a pain to debug): %s, ABORTING", str(e), exc_info=True)
                 continue
