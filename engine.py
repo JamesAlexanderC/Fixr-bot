@@ -39,7 +39,8 @@ stopEvent = asyncio.Event()
 # global vars for holding camoufox info
 scan_session: dict = {}
 ticket_sessions: dict = {}
-proxies_enabled: bool = True # FOR TESTING, SHLD DEFAULT TO FALSE
+buy_proxies_enabled: bool = False # FOR TESTING, SHLD DEFAULT TO FALSE
+scan_proxies_enabled: bool = False # FOR TESTING, SHLD DEFAULT TO FALSE
 
 
 
@@ -51,11 +52,11 @@ async def login_get_ticket(
         url,
 ):
     try:
-        if proxies_enabled:
+        if buy_proxies_enabled:
             try:
-                if os.path.exists("proxies.json"):
+                if os.path.exists("buy_proxies.json"):
                     # Here we use the format server:port:username:password
-                    with open("proxies.json") as f:
+                    with open("buy_proxies.json") as f:
                         proxies = json.load(f)
                     num_proxies = len(proxies)
                     proxy = proxies[random.randint(0, num_proxies-1)].split(":")
@@ -168,11 +169,11 @@ async def queueHandler():
                 logger.error("Error loading event: %s, ABORTING", str(e), exc_info=True)
                 continue
             try:
-                if proxies_enabled:
+                if scan_proxies_enabled:
                     try:
-                        if os.path.exists("proxies.json"):
+                        if os.path.exists("scan_proxies.json"):
                             # Here we use the format server:port:username:password
-                            with open("proxies.json") as f:
+                            with open("scan_proxies.json") as f:
                                 proxies = json.load(f)
                             num_proxies = len(proxies)
                             proxy = proxies[random.randint(0, num_proxies-1)].split(":")

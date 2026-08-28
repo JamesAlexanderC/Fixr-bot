@@ -14,6 +14,8 @@ echo '{"organiser_url": "https://fixr.co/organiser/timepiece", "ticket_keyword":
 echo "created event storage file" &&
 mkdir "logs" &&
 echo "created logs folder" &&
+touch scan_proxies.json && touch buy_proxies.json &&
+echo "created proxy storage file" &&
 echo "=================================" &&
 echo "         SETUP COMPLETE!         " &&
 echo "================================="
