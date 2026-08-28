@@ -35,7 +35,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def favicon():
     return FileResponse("favicon.ico")
 
-# Interace
+# Interface
+@app.get("/")
+async def control_dash():
+    return FileResponse("static/dashboard.html")
+
 @app.get("/dashboard")
 async def control_dash():
     return FileResponse("static/dashboard.html")
