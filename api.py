@@ -47,104 +47,80 @@ async def control_dash():
 # POST edit card
 @app.post("/card", status_code=201)
 async def edit_card(card: dict):
-
-    # IF LOOP IS ACTIVE RETURN 400 (DETAIL LOOP IS ACTIVE)
-
+    global scan_session
+    if scan_session != {} and scan_session != None:
+        raise HTTPException(status_code=400, detail="Scan is active")
     if not all([card.get("cardNumber"), card.get("cardExpiry"), card.get("cardCvc"), card.get("cardPostcode")]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-
     try:
-        async with aiofiles.open("card.json", "w") as f:
-           await f.write(json.dumps(card))
-
+        with open("card.json", "w") as f:
+           json.dump(card, f)
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to store card") from error
-
     return {"status": "stored"}
 
 # GET accounts
 @app.get("/accounts")
 async def get_accounts():
     try:
-        async with aiofiles.open("accounts.json") as f:
-            contents = await f.read()
-            accounts = json.loads(contents)
-
+        with open("accounts.json") as f:
+            accounts = json.load(f)
     except FileNotFoundError:
         accounts = {}
-
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to load accounts") from error
-
     return accounts
 
 # POST accounts
 @app.post("/accounts", status_code=201)
 async def add_account(data: dict):
-
-    if scan_session != None:
+    if scan_session != {} and scan_session != None:
         raise HTTPException(status_code=400, detail="Scan loop in progress")
-
     email = data.get("email")
     password = data.get("password")
-
     if not all([email, password]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-
     try:
         with open("accounts.json") as f:
             accounts = json.load(f)
-
     except FileNotFoundError:
         accounts = {}
-
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to load accounts") from error
-
     accounts[email] = password
-
     try:
         with open("accounts.json", "w") as f:
             json.dump(accounts, f)
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to save accounts")
-        
     return {email: password}
 
 # GET event
 @app.get("/event")
 async def get_event():
-
     try:
         with open("event.json", "r") as f:
             event = json.load(f)
-
     except FileNotFoundError:
         event = {
             "organiser_url": "",
             "ticket_keyword": "",
             "scan_interval": "5"
         }
-
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to load event") from error
-
     return event
 
 # POST event
 @app.post("/event", status_code=201)
 async def edit_event(data: dict):
-
     if not all([data.get("organiser_url"), data.get("ticket_keyword"), data.get("scan_interval")]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-
     try:
         with open("event.json", "w") as f:
             json.dump(data, f)
-
     except Exception as error:
         raise HTTPException(status_code=500, detail="Failed to load event") from error
-    
     return data
 
 # start scan
@@ -157,6 +133,8 @@ async def start_scan():
 async def stop_scan():
     await inputQueue.put("stop-scan-loop")
 
+""" CURRENTLY OF NO USE AND IMPLIES UNNECCESSARY COMPLEXITY INCREASE
 @app.post("/get-ticket")
 async def get_ticket(data: dict):
     await inputQueue.put(f"get-ticket|{data["url"]}")
+"""

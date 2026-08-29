@@ -1,47 +1,52 @@
-<head>
-    <title>Fixr-Bot Dashboard</title>
-    <script type="text/javascript" src="static/scripts/dashboard.js"></script>
-    <link rel="stylesheet" href="static/styles/shared.css">
-    <link rel="stylesheet" href="static/styles/dashboard.css">
-</head>
-<body>
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Fixr-Bot Dashboard</title>
+        <script type="text/javascript" src="static/scripts/dashboard.js"></script>
+        <link rel="stylesheet" href="static/styles/shared.css">
+        <link rel="stylesheet" href="static/styles/dashboard.css">
+    </head>
+    <body>
 
-    <h1 id="title">Fixr-Bot Control Panel</h1>
+        <h1 id="title">Fixr-Bot Control Panel</h1>
 
-    <div id="main">
+        <div id="main">
 
-        <div id="control">
+            <div id="control">
 
-            <button type="button" onclick="startscan()">Start Scan</button>
+                <button type="button" onclick="startscan()">Start Scan</button>
 
-            <button type="button" onclick="stopscan()">Stop Scan</button>
+                <button type="button" onclick="stopscan()">Stop Scan</button>
 
-            <button type="button" onclick="refresh()" id="refresh"><img id="reload-icon" src="static/assets/reload.svg"/></button>
+                <button type="button" onclick="refresh()" id="refresh"><img id="reload-icon" src="static/assets/reload.svg"/></button>
 
+            </div>
+
+            <div id="event">
+                
+                <div id="organiser-url">
+                    <p>Organiser URL</p>
+                    <input type="text" id="organiser-url-in"></input>
+                </div>
+                
+                <div id="ticket-keyword">
+                    <p>Ticket Keyword</p>
+                    <input type="text" id="ticket-keyword-in"></input>
+                </div>
+                
+                <div id="scan-interval">
+                    <p>Scan Interval</p>
+                    <input type="text" id="scan-interval-in"></input>
+                </div>
+
+                <button type="button" onclick="editevent()">Submit</button>
+
+            </div>
+
+            <div id="accounts"></div>
+
+            <button id="add-account" onclick="addnewaccount()">Add account</button>
+        
         </div>
-
-        <div id="event">
-            
-            <div id="organiser-url">
-                <p>Organiser URL</p>
-                <input type="text" id="organiser-url-in"></input>
-            </div>
-            
-            <div id="ticket-keyword">
-                <p>Ticket Keyword</p>
-                <input type="text" id="ticket-keyword-in"></input>
-            </div>
-            
-            <div id="scan-interval">
-                <p>Scan Interval</p>
-                <input type="text" id="scan-interval-in"></input>
-            </div>
-
-            <button type="button" onclick="editevent()">Submit</button>
-
-        </div>
-
-        <div id="accounts"></div>
-    
-    </div>
-</body>
+    </body>
+</html>
