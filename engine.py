@@ -213,10 +213,11 @@ async def queueHandler():
                 logger.error("Error during login: %s, ABORTING", str(e), exc_info=True)
                 try: 
                     await camoufox.__aexit__()
+                    continue
                 except Exception as e:
                     logger.critical("Failed to stop coroutine and Camoufox instance: %s, ABORTING", str(e), exc_info=True)
-                finally:
                     continue
+
             try:
                 task = asyncio.create_task(
                     scan_loop.run(
@@ -233,9 +234,9 @@ async def queueHandler():
                 logger.error("Error creating scan task: %s, ABORTING", str(e), exc_info=True)
                 try:
                     await clean_camoufox(scan_session)
+                    continue
                 except Exception as e:
                     logger.critical("Failed to stop coroutine and Camoufox instance: %s, ABORTING", str(e), exc_info=True)
-                finally:
                     continue
 
         elif msg == "stop-scan-loop":
@@ -297,9 +298,9 @@ async def queueHandler():
                     logger.error("Error creating ticket task for %s: %s, ABORTING", account, str(e), exc_info=True)
                     try:
                         await clean_camoufox(ticket_sessions[session_name])
+                        continue
                     except Exception as e:
                         logger.critical("Failed to stop coroutine and Camoufox instance: %s, ABORTING", str(e), exc_info=True)
-                    finally:
                         continue
 
         elif msg.split("|")[0] == "buy-ticket":
@@ -334,9 +335,9 @@ async def queueHandler():
                 logger.error("Error during ticket purchase: %s, ABORTING", str(e), exc_info=True)
                 try:
                     await clean_camoufox(ticket_sessions[msg.split("|")[1]])
+                    continue
                 except Exception as e:
                     logger.critical("Failed to stop coroutine and Camoufox instance: %s, ABORTING", str(e), exc_info=True)
-                finally:
                     continue
             try:
                 ticket_sessions[msg.split("|")[1]]["task"].cancel()
