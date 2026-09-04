@@ -17,8 +17,18 @@ async function editentry(entry) {
     document.getElementById(`${entry}-password`).disabled = false
     document.getElementById(`${entry}-edit-btn`).style.visibility = "hidden"
     
+    save_btn = document.createElement("button");
+    delete_btn = document.createElement("button");
+
+    save_svg = document.createElement("img")
+    save_svg.src = "static/assets/save.svg"
+    save_svg.id = "save-icon"
+
+    save_btn.appendChild(save_svg)
     
-    document.getElementById(entry)
+
+    document.getElementById(entry).appendChild(save_btn)
+    document.getElementById(entry).appendChild(delete_btn)
 }
 
 async function displayaccounts() {
