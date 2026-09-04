@@ -1,0 +1,40 @@
+services:
+  fixr-bot-1:
+    build: .
+    image: fixr-bot:latest
+    container_name: fixr-bot-1
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  fixr-bot-2:
+    build: .
+    image: fixr-bot:latest
+    container_name: fixr-bot-2
+    ports:
+      - "8002:8000"
+    restart: unless-stopped
+
+  fixr-bot-3:
+    build: .
+    image: fixr-bot:latest
+    container_name: fixr-bot-3
+    ports:
+      - "8003:8000"
+    restart: unless-stopped
+
+  fixr-bot-4:
+    build: .
+    image: fixr-bot:latest
+    container_name: fixr-bot-4
+    ports:
+      - "8004:8000"
+    restart: unless-stopped
+
+  fixr-bot-5:
+    build: .
+    image: fixr-bot:latest
+    container_name: fixr-bot-5
+    ports:
+      - "8005:8000"
+    restart: unless-stopped
